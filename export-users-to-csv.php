@@ -156,6 +156,7 @@ class PP_EU_Export_Users {
 						echo '<option value="">' . __( 'Every Role', 'export-users-to-csv' ) . '</option>';
 						global $wp_roles;
 						foreach ( $wp_roles->role_names as $role => $name ) {
+							$name = translate_user_role($name);
 							echo "\n\t<option value='" . esc_attr( $role ) . "'>$name</option>";
 						}
 						?>
