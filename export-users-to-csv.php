@@ -272,6 +272,13 @@ class PP_EU_Export_Users {
 			</tfoot>
 		
 			<tbody>
+				<?php foreach ($users as $user) : ?> 
+					<tr>
+						<?php foreach ($user as $key => $value) : ?> 
+							<td><?php echo $value; ?></td>
+						<?php endforeach; ?>
+					</tr>
+				<?php endforeach; ?>
 			</tbody>
 		</table>	
 	
