@@ -37,7 +37,8 @@ load_plugin_textdomain( 'export-users-to-csv', false, basename( dirname( __FILE_
  * @since 0.1
  **/
 class PP_EU_Export_Users {
-
+	
+	private $options;
 	/**
 	 * Class contructor
 	 *
@@ -48,7 +49,6 @@ class PP_EU_Export_Users {
 		add_action( 'init', array( $this, 'generate_csv' ) );
 		add_filter( 'pp_eu_exclude_data', array( $this, 'exclude_data' ) );
 	}
-
 	/**
 	 * Add administration menus
 	 *
@@ -176,6 +176,7 @@ class PP_EU_Export_Users {
 					</select>
 				</td>
 			</tr>
+			<?php $this->gnuside_display_all_fields(); ?>
 		</table>
 		<p class="submit">
 			<input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
@@ -228,6 +229,58 @@ class PP_EU_Export_Users {
 			$month = zeroise( $date->month, 2 );
 			echo '<option value="' . $date->year . '-' . $month . '">' . $wp_locale->get_month( $month ) . ' ' . $date->year . '</option>';
 		}
+	}
+	
+	private function gnuside_display_all_fields() {
+		$args = array(
+			'fields' => 'all_with_meta',
+			//'role' => stripslashes( $_POST['role'] )
+		);
+		
+		$users = get_users( $args );
+		/*foreach ($users as $key => $user) {
+			echo $user;
+		}*/
+		
+		$users_nbr = count($users);
+
+		if(!$users_nbr) { return; }
+		
+		$user = get_object_vars($users[0]);
+		
+		//$thead_keys = array_keys($user);
+		
+		var_dump($user)
+		?>
+		<br/>
+		<table class="wp-list-table widefat fixed users">
+			<thead>
+			<tr>
+				<th>
+					<label>ddd</label>
+				</th>
+			</thead>
+		
+			<tfoot>
+			<tr>
+				<th>
+					<label>ddd</label>
+				</th>
+			</tfoot>
+		
+			<tbody id="the-list" data-wp-lists="list:user">
+		</table>	
+	
+		<?php
+	}
+	
+	public function add_to_custom_admin_menu()
+	{
+		
+	}
+	public function custom_table_to_csv()
+	{
+		
 	}
 }
 
