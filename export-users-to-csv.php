@@ -264,7 +264,7 @@ class PP_EU_Export_Users {
 			<tfoot>
 				<tr>
 					<?php foreach ($thead_keys as $value) : ?>
-						<td>
+						<td align="center">
 							<label><?php echo $value; ?></label>
 						</td>
 					<?php endforeach; ?>
