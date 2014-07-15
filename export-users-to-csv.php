@@ -231,56 +231,51 @@ class PP_EU_Export_Users {
 		}
 	}
 	
-	private function gnuside_display_all_fields() {
-		$args = array(
-			'fields' => 'all_with_meta',
-			//'role' => stripslashes( $_POST['role'] )
+	private function user_query() {
+		global $wpdb;
+		$users = $wpdb->get_results( 
+			"	SELECT *
+				FROM $wpdb->users",
+			ARRAY_A
 		);
-		
-		$users = get_users( $args );
-		/*foreach ($users as $key => $user) {
-			echo $user;
-		}*/
-		
+		return $users;
+	}
+	private function gnuside_display_all_fields() {
+		$users = $this->user_query();
 		$users_nbr = count($users);
 
 		if(!$users_nbr) { return; }
 		
-		$user = get_object_vars($users[0]);
-		
-		//$thead_keys = array_keys($user);
-		
-		var_dump($user)
+		$thead_keys = array_keys($users[0]);
+
 		?>
 		<br/>
-		<table class="wp-list-table widefat fixed users">
+		<table class="">
 			<thead>
-			<tr>
-				<th>
-					<label>ddd</label>
-				</th>
+				<tr>
+					<?php foreach ($thead_keys as $value) : ?>
+						<th>
+							<label><?php echo $value; ?></label>
+						</th>
+					<?php endforeach; ?>
+				</tr>
 			</thead>
 		
 			<tfoot>
-			<tr>
-				<th>
-					<label>ddd</label>
-				</th>
+				<tr>
+					<?php foreach ($thead_keys as $value) : ?>
+						<td>
+							<label><?php echo $value; ?></label>
+						</td>
+					<?php endforeach; ?>
+				</tr>
 			</tfoot>
 		
-			<tbody id="the-list" data-wp-lists="list:user">
+			<tbody>
+			</tbody>
 		</table>	
 	
 		<?php
-	}
-	
-	public function add_to_custom_admin_menu()
-	{
-		
-	}
-	public function custom_table_to_csv()
-	{
-		
 	}
 }
 
