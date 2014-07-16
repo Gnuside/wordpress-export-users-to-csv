@@ -47,7 +47,7 @@ class PP_EU_Export_Users {
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_admin_pages' ) );
 		add_action( 'init', array( $this, 'generate_csv' ) );
-		add_filter( 'pp_eu_exclude_data', array( $this, 'exclude_data' ) );
+		//add_filter( 'pp_eu_exclude_data', array( $this, 'exclude_data' ) );
 	}
 	/**
 	 * Add administration menus
@@ -66,7 +66,18 @@ class PP_EU_Export_Users {
 	public function generate_csv() {
 		if ( isset( $_POST['_wpnonce-pp-eu-export-users-users-page_export'] ) ) {
 			check_admin_referer( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' );
-
+			
+			$users_var = array();
+			$usermeta_var = array();
+			
+			foreach ($_POST as $key => $value) {
+				if( strpos($key, 'eutcvs_users_') === 0 ){
+					$users_var[] = ltrim ($key, 'eutcvs_users_');
+				}elseif( strpos($key, 'eutcvs_usermeta_') === 0 ) {
+					$usermeta_var[] = ltrim ($key, 'eutcvs_users_');
+				}
+			}
+			
 			$args = array(
 				'fields' => 'all_with_meta',
 				'role' => stripslashes( $_POST['role'] )
@@ -91,7 +102,7 @@ class PP_EU_Export_Users {
 			header( 'Content-Disposition: attachment; filename=' . $filename );
 			header( 'Content-Type: text/csv; charset=' . get_option( 'blog_charset' ), true );
 
-			$exclude_data = apply_filters( 'pp_eu_exclude_data', array() );
+			//$exclude_data = apply_filters( 'pp_eu_exclude_data', array() );
 
 			global $wpdb;
 
@@ -103,15 +114,16 @@ class PP_EU_Export_Users {
 			);
 			$meta_keys = $wpdb->get_results( "SELECT distinct(meta_key) FROM $wpdb->usermeta" );
 			$meta_keys = wp_list_pluck( $meta_keys, 'meta_key' );
-			$fields = array_merge( $data_keys, $meta_keys );
-
+			//$fields = array_merge( $data_keys, $meta_keys );
+			$fields = $users_var;
 			$headers = array();
-			foreach ( $fields as $key => $field ) {
+			/*foreach ( $fields as $key => $field ) {
 				if ( in_array( $field, $exclude_data ) )
 					unset( $fields[$key] );
 				else
 					$headers[] = '"' . strtolower( $field ) . '"';
-			}
+			}*/
+
 			echo implode( ',', $headers ) . "\n";
 
 			foreach ( $users as $user ) {
@@ -123,7 +135,7 @@ class PP_EU_Export_Users {
 				}
 				echo implode( ',', $data ) . "\n";
 			}
-
+			
 			exit;
 		}
 	}
@@ -198,7 +210,7 @@ class PP_EU_Export_Users {
 		$where = '';
 
 		if ( ! empty( $_POST['start_date'] ) )
-			$where .= $wpdb->prepare( " AND $wpdb->users.user_registered >= %s", date( 'Y-m-d', strtotime( $_POST['start_date'] ) ) );
+			$where .= $wpdb->prepare( " AND $wpdb->users.user_regt''as modifié le twitter pouistered >= %s", date( 'Y-m-d', strtotime( $_POST['start_date'] ) ) );
 
 		if ( ! empty( $_POST['end_date'] ) )
 			$where .= $wpdb->prepare( " AND $wpdb->users.user_registered < %s", date( 'Y-m-d', strtotime( '+1 month', strtotime( $_POST['end_date'] ) ) ) );
@@ -247,7 +259,6 @@ class PP_EU_Export_Users {
 		if(!$users_nbr) { return; }
 		
 		$thead_keys = array_keys($users[0]);
-
 		?>
 		<br/>
 		<table class="">
@@ -255,6 +266,7 @@ class PP_EU_Export_Users {
 				<tr>
 					<?php foreach ($thead_keys as $value) : ?>
 						<th>
+							<input type="checkbox" value="" name="<?php echo "eutcvs_users_".$value; ?>" /> 
 							<label><?php echo $value; ?></label>
 						</th>
 					<?php endforeach; ?>
@@ -265,7 +277,7 @@ class PP_EU_Export_Users {
 				<tr>
 					<?php foreach ($thead_keys as $value) : ?>
 						<td align="center">
-							<label><?php echo $value; ?></label>
+							<label><?php echo $value; ?> </label>
 						</td>
 					<?php endforeach; ?>
 				</tr>
