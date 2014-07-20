@@ -236,16 +236,16 @@ class PP_EU_Export_Users {
 	
 	public function gnuside_desc_array(){
 		return array(
-			'ID'					=> _( 'User ID', 'gnuside'),
-			'user_login'			=> _( 'User login', 'gnuside'),
-			'user_pass'				=> _( 'User password', 'gnuside'),
-			'user_nicename'			=> _( 'Short name', 'gnuside'),
-			'user_email'			=> _( 'User e-mail', 'gnuside'),
-			'user_url'				=> _( 'User website', 'gnuside'),
-			'user_registered'		=> _( 'User registration date', 'gnuside'),
-			'user_activation_key'	=> _( 'Activation key send by mail', 'gnuside'),
-			'user_status'			=> _( 'Dead value. Useless value. Deprecated', 'gnuside'),
-			'display_name'			=> _( 'User name displayed on this website', 'gnuside')
+			'ID'					=> __( 'User ID', 'gnuside'),
+			'user_login'			=> __( 'User login', 'gnuside'),
+			'user_pass'				=> __( 'User password', 'gnuside'),
+			'user_nicename'			=> __( 'Short name', 'gnuside'),
+			'user_email'			=> __( 'User e-mail', 'gnuside'),
+			'user_url'				=> __( 'User website', 'gnuside'),
+			'user_registered'		=> __( 'User registration date', 'gnuside'),
+			'user_activation_key'	=> __( 'Activation key send by mail', 'gnuside'),
+			'user_status'			=> __( 'Dead value. Useless value. Deprecated', 'gnuside'),
+			'display_name'			=> __( 'User name displayed on this website', 'gnuside')
 		);
 	}
 	
