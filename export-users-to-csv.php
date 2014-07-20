@@ -236,7 +236,7 @@ class PP_EU_Export_Users {
 	
 	public function gnuside_desc_array(){
 		return array(
-			'ID'					=> __( 'User ID.', 'gnuside'),
+			'ID'					=> __( 'User ID in the database.', 'gnuside'),
 			'user_login'			=> __( 'User login.', 'gnuside'),
 			'user_pass'				=> __( 'User password.', 'gnuside'),
 			'user_nicename'			=> __( 'Short name.', 'gnuside'),
