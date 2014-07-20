@@ -233,51 +233,63 @@ class PP_EU_Export_Users {
 			</form>
 		<?php
 	}
-
+	
+	public function gnuside_desc_array(){
+		return array(
+			'ID'					=> '', 
+			'user_login'			=> 'User login',
+			'user_pass'				=> 'User password',
+			'user_nicename'			=> '',
+			'user_email'			=> 'User e-mail',
+			'user_url'				=> 'User website',
+			'user_registered'		=> 'User registration date',
+			'user_activation_key'	=> '',
+			'user_status'			=> '',
+			'display_name'			=> ''
+		);
+	}
+	
 	private function gnuside_display_all_fields() {
 		$users = $this->user_query();
 		$users_nbr = count($users);
 
 		if(!$users_nbr) { return; }
 		
+		$desc = $this->gnuside_desc_array();
 		$thead_keys = array_keys($users[0]);
 		?>
 		<br/>
-		<table class="wp-list-table widefat">
+		<table class="wp-list-table widefat" id="gnuside-eutcvs-table">
 			<thead>
 				<tr>
-					<?php foreach ($thead_keys as $value) : ?>
-						<th class="manage-column" >
+					<th class="manage-column" >
+						Nom du champ
+					</th>
+					<th class="manage-column" >
+						Nom du champ dans le fichier CSV
+					</th>
+					<th class="manage-column" >
+						Description du champ
+					</th>
+				</tr>
+			</thead>
+		
+			<tbody class="" id="" >
+				<?php foreach ($thead_keys as $value) : ?>
+					<tr class="alternate" >
+						<td class="manage-column" >
 							<label>
 								<input type="checkbox" value="" name="<?php echo "eutcvs_users_".$value; ?>" /> 
 								<?php echo $value; ?>
 							</label>
-						</th>
-					<?php endforeach; ?>
-				</tr>
-			</thead>
-		
-			<tfoot>
-				<tr class="manage-column" >
-					<?php foreach ($thead_keys as $value) : ?>
-						<td align="center">
-							<label><?php echo $value; ?> </label>
 						</td>
-					<?php endforeach; ?>
-				</tr>
-			</tfoot>
-		
-			<tbody class="" id="the-list" >
-				<?php foreach ($users as $user) : ?> 
-					<tr class="alternate" >
-						<?php foreach ($user as $key => $value) : ?> 
-							<td><?php echo $value; ?></td>
-						<?php endforeach; ?>
+						<td></td>
+						<td><?php echo $desc[$value]; ?></td>
 					</tr>
 				<?php endforeach; ?>
 			</tbody>
 		</table>	
-	
+
 		<?php
 	}
 }
