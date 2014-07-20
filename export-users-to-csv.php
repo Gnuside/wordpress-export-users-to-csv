@@ -66,15 +66,15 @@ class PP_EU_Export_Users {
 	public function generate_csv() {
 		if ( isset( $_POST['_wpnonce-pp-eu-export-users-users-page_export'] ) ) {
 			check_admin_referer( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' );
-			
 			$users_var = array();
 			$usermeta_var = array();
 			
 			foreach ($_POST as $key => $value) {
 				if( strpos($key, 'eutcvs_users_') === 0 ){
-					$users_var[] = ltrim ($key, 'eutcvs_users_');
+					$users_var[] = str_replace('eutcvs_users_', '', $key);
+					
 				}elseif( strpos($key, 'eutcvs_usermeta_') === 0 ) {
-					$usermeta_var[] = ltrim ($key, 'eutcvs_users_');
+					$usermeta_var[] = str_replace('eutcvs_users_', '', $key);
 				}
 			}
 			
@@ -86,12 +86,12 @@ class PP_EU_Export_Users {
 			add_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
 			$users = get_users( $args );
 			remove_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
-
+/*
 			if ( ! $users ) {
 				$referer = add_query_arg( 'error', 'empty', wp_get_referer() );
 				wp_redirect( $referer );
 				exit;
-			}
+			}*/
 
 			$sitename = sanitize_key( get_bloginfo( 'name' ) );
 			if ( ! empty( $sitename ) )
@@ -102,29 +102,16 @@ class PP_EU_Export_Users {
 			header( 'Content-Disposition: attachment; filename=' . $filename );
 			header( 'Content-Type: text/csv; charset=' . get_option( 'blog_charset' ), true );
 
-			//$exclude_data = apply_filters( 'pp_eu_exclude_data', array() );
 
 			global $wpdb;
 
-			$data_keys = array(
-				'ID', 'user_login', 'user_pass',
-				'user_nicename', 'user_email', 'user_url',
-				'user_registered', 'user_activation_key', 'user_status',
-				'display_name'
-			);
-			$meta_keys = $wpdb->get_results( "SELECT distinct(meta_key) FROM $wpdb->usermeta" );
-			$meta_keys = wp_list_pluck( $meta_keys, 'meta_key' );
+			//$meta_keys = $wpdb->get_results( "SELECT distinct(meta_key) FROM $wpdb->usermeta" );
+			//$meta_keys = wp_list_pluck( $meta_keys, 'meta_key' );
 			//$fields = array_merge( $data_keys, $meta_keys );
 			$fields = $users_var;
-			$headers = array();
-			/*foreach ( $fields as $key => $field ) {
-				if ( in_array( $field, $exclude_data ) )
-					unset( $fields[$key] );
-				else
-					$headers[] = '"' . strtolower( $field ) . '"';
-			}*/
+			
 
-			echo implode( ',', $headers ) . "\n";
+			echo implode( ',',  $users_var ) . "\n";
 
 			foreach ( $users as $user ) {
 				$data = array();
@@ -133,84 +120,28 @@ class PP_EU_Export_Users {
 					$value = is_array( $value ) ? serialize( $value ) : $value;
 					$data[] = '"' . str_replace( '"', '""', $value ) . '"';
 				}
-				echo implode( ',', $data ) . "\n";
+				echo implode( ';', $data ) . "\n";
 			}
 			
 			exit;
 		}
 	}
-
-	/**
-	 * Content of the settings page
-	 *
-	 * @since 0.1
-	 **/
-	public function users_page() {
-		if ( ! current_user_can( 'list_users' ) )
-			wp_die( __( 'You do not have sufficient permissions to access this page.', 'export-users-to-csv' ) );
-?>
-
-<div class="wrap">
-	<h2><?php _e( 'Export users to a CSV file', 'export-users-to-csv' ); ?></h2>
-	<?php
-	if ( isset( $_GET['error'] ) ) {
-		echo '<div class="updated"><p><strong>' . __( 'No user found.', 'export-users-to-csv' ) . '</strong></p></div>';
+	private function user_query() {
+		global $wpdb;
+		$query = "SELECT *
+				FROM $wpdb->users";
+				
+		$users = $wpdb->get_results( $query, ARRAY_A);
+		return $users;
 	}
-	?>
-	<form method="post" action="" enctype="multipart/form-data">
-		<?php wp_nonce_field( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' ); ?>
-		<table class="form-table">
-			<tr valign="top">
-				<th scope="row"><label for"pp_eu_users_role"><?php _e( 'Role', 'export-users-to-csv' ); ?></label></th>
-				<td>
-					<select name="role" id="pp_eu_users_role">
-						<?php
-						echo '<option value="">' . __( 'Every Role', 'export-users-to-csv' ) . '</option>';
-						global $wp_roles;
-						foreach ( $wp_roles->role_names as $role => $name ) {
-							$name = translate_user_role($name);
-							echo "\n\t<option value='" . esc_attr( $role ) . "'>$name</option>";
-						}
-						?>
-					</select>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row"><label><?php _e( 'Date range', 'export-users-to-csv' ); ?></label></th>
-				<td>
-					<select name="start_date" id="pp_eu_users_start_date">
-						<option value="0"><?php _e( 'Start Date', 'export-users-to-csv' ); ?></option>
-						<?php $this->export_date_options(); ?>
-					</select>
-					<select name="end_date" id="pp_eu_users_end_date">
-						<option value="0"><?php _e( 'End Date', 'export-users-to-csv' ); ?></option>
-						<?php $this->export_date_options(); ?>
-					</select>
-				</td>
-			</tr>
-			<?php $this->gnuside_display_all_fields(); ?>
-		</table>
-		<p class="submit">
-			<input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
-			<input type="submit" class="button-primary" value="<?php _e( 'Export', 'export-users-to-csv' ); ?>" />
-		</p>
-	</form>
-<?php
-	}
-
-	public function exclude_data() {
-		$exclude = array( 'user_pass', 'user_activation_key' );
-
-		return $exclude;
-	}
-
+	
 	public function pre_user_query( $user_search ) {
 		global $wpdb;
 
 		$where = '';
 
 		if ( ! empty( $_POST['start_date'] ) )
-			$where .= $wpdb->prepare( " AND $wpdb->users.user_regt''as modifié le twitter pouistered >= %s", date( 'Y-m-d', strtotime( $_POST['start_date'] ) ) );
+			$where .= $wpdb->prepare( " AND $wpdb->users.user_registered >= %s", date( 'Y-m-d', strtotime( $_POST['start_date'] ) ) );
 
 		if ( ! empty( $_POST['end_date'] ) )
 			$where .= $wpdb->prepare( " AND $wpdb->users.user_registered < %s", date( 'Y-m-d', strtotime( '+1 month', strtotime( $_POST['end_date'] ) ) ) );
@@ -234,24 +165,75 @@ class PP_EU_Export_Users {
 		if ( !$month_count || ( 1 == $month_count && 0 == $months[0]->month ) )
 			return;
 
+		$option_html = "";
 		foreach ( $months as $date ) {
-			if ( 0 == $date->year )
-				continue;
-
+			if ( 0 == $date->year ) { continue; }
+			
 			$month = zeroise( $date->month, 2 );
-			echo '<option value="' . $date->year . '-' . $month . '">' . $wp_locale->get_month( $month ) . ' ' . $date->year . '</option>';
+			$option_html .= '<option value="' . $date->year . '-' . $month . '">' . $wp_locale->get_month( $month ) . ' ' . $date->year . '</option>';
 		}
+		return $option_html;
 	}
+	/**
+	 * Content of the settings page
+	 *
+	 * @since 0.1
+	 **/
+	public function users_page() {
+		if ( ! current_user_can( 'list_users' ) )
+			wp_die( __( 'You do not have sufficient permissions to access this page.', 'export-users-to-csv' ) );
+		?>
 	
-	private function user_query() {
-		global $wpdb;
-		$users = $wpdb->get_results( 
-			"	SELECT *
-				FROM $wpdb->users",
-			ARRAY_A
-		);
-		return $users;
+		<div class="wrap">
+		<h2><?php _e( 'Export users to a CSV file', 'export-users-to-csv' ); ?></h2>
+		<?php
+		if ( isset( $_GET['error'] ) ) {
+			echo '<div class="updated"><p><strong>' . __( 'No user found.', 'export-users-to-csv' ) . '</strong></p></div>';
+		}
+		?>
+			<form method="post" action="" enctype="multipart/form-data">
+				<?php wp_nonce_field( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' ); ?>
+				<table class="form-table">
+					<tr valign="top">
+						<th scope="row"><label for"pp_eu_users_role"><?php _e( 'Role', 'export-users-to-csv' ); ?></label></th>
+						<td>
+							<select name="role" id="pp_eu_users_role">
+								<?php
+								echo '<option value="">' . __( 'Every Role', 'export-users-to-csv' ) . '</option>';
+								global $wp_roles;
+								foreach ( $wp_roles->role_names as $role => $name ) {
+									$name = translate_user_role($name);
+									echo "\n\t<option value='" . esc_attr( $role ) . "'>$name</option>";
+								}
+								?>
+							</select>
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"><label><?php _e( 'Date range', 'export-users-to-csv' ); ?></label></th>
+						<td>
+							<select name="start_date" id="pp_eu_users_start_date">
+								<option value="0"><?php _e( 'Start Date', 'export-users-to-csv' ); ?></option>
+								<?php $date = $this->export_date_options(); 
+									echo $date;
+								?>
+							</select>
+							<select name="end_date" id="pp_eu_users_end_date">
+								<option value="0"><?php _e( 'End Date', 'export-users-to-csv' ); ?></option>
+								<?php echo $date; ?>
+							</select>
+						</td>
+					</tr>
+					<?php $this->gnuside_display_all_fields(); ?>
+				</table>
+				<p class="submit">
+					<input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
+					<input type="submit" class="button-primary" value="<?php _e( 'Export', 'export-users-to-csv' ); ?>" />
+				</p>
+			</form>
+		<?php
 	}
+
 	private function gnuside_display_all_fields() {
 		$users = $this->user_query();
 		$users_nbr = count($users);
@@ -261,20 +243,22 @@ class PP_EU_Export_Users {
 		$thead_keys = array_keys($users[0]);
 		?>
 		<br/>
-		<table class="">
+		<table class="wp-list-table widefat">
 			<thead>
 				<tr>
 					<?php foreach ($thead_keys as $value) : ?>
-						<th>
-							<input type="checkbox" value="" name="<?php echo "eutcvs_users_".$value; ?>" /> 
-							<label><?php echo $value; ?></label>
+						<th class="manage-column" >
+							<label>
+								<input type="checkbox" value="" name="<?php echo "eutcvs_users_".$value; ?>" /> 
+								<?php echo $value; ?>
+							</label>
 						</th>
 					<?php endforeach; ?>
 				</tr>
 			</thead>
 		
 			<tfoot>
-				<tr>
+				<tr class="manage-column" >
 					<?php foreach ($thead_keys as $value) : ?>
 						<td align="center">
 							<label><?php echo $value; ?> </label>
@@ -283,9 +267,9 @@ class PP_EU_Export_Users {
 				</tr>
 			</tfoot>
 		
-			<tbody>
+			<tbody class="" id="the-list" >
 				<?php foreach ($users as $user) : ?> 
-					<tr>
+					<tr class="alternate" >
 						<?php foreach ($user as $key => $value) : ?> 
 							<td><?php echo $value; ?></td>
 						<?php endforeach; ?>
