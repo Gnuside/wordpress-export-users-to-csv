@@ -31,6 +31,15 @@ Text Domain: export-users-to-csv
 
 load_plugin_textdomain( 'export-users-to-csv', false, basename( dirname( __FILE__ ) ) . '/languages' );
 
+register_activation_hook( __FILE__, 'gnuside_eutcvs_activation' );
+
+function gnuside_eutcvs_activation() {
+	if( is_admin() ) {
+		if( !get_option( 'gnuside_eutcvs_plugin' ) ){
+			add_option( 'gnuside_eutcvs_plugin', '', '', 'no' );
+		}
+	}
+}
 /**
  * Main plugin class
  *
@@ -49,6 +58,7 @@ class PP_EU_Export_Users {
 		add_action( 'init', array( $this, 'generate_csv' ) );
 		//add_filter( 'pp_eu_exclude_data', array( $this, 'exclude_data' ) );
 	}
+	
 	/**
 	 * Add administration menus
 	 *
@@ -57,7 +67,24 @@ class PP_EU_Export_Users {
 	public function add_admin_pages() {
 		add_users_page( __( 'Export to CSV', 'export-users-to-csv' ), __( 'Export to CSV', 'export-users-to-csv' ), 'list_users', 'export-users-to-csv', array( $this, 'users_page' ) );
 	}
-
+	
+	
+	private function gnuside_save_options( $csv_columns_names, $selected_fields ){
+		if( !is_array($csv_columns_names) || !is_array($selected_fields) ) 
+			return;
+		
+		if( !$options ) 
+			$this->options = get_option( 'gnuside_eutcvs_plugin' );
+		
+		$options_array = array();
+		
+		$options_array[] = $csv_columns_names;
+		$options_array['selected_var'] = implode(',', $selected_fields);
+		
+		$this->options = $options_array + $this->options;
+		update_option( 'gnuside_eutcvs_plugin' , $this->options);
+	}
+	
 	/**
 	 * Process content of CSV file
 	 *
@@ -66,6 +93,7 @@ class PP_EU_Export_Users {
 	public function generate_csv() {
 		if ( isset( $_POST['_wpnonce-pp-eu-export-users-users-page_export'] ) ) {
 			check_admin_referer( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' );
+			
 			$users_var = array();
 			$usermeta_var = array();
 			
@@ -118,7 +146,10 @@ class PP_EU_Export_Users {
 					$csv_var_name[] = $key;
 			}
 			
-			echo implode( ',',  $csv_var_name ) . "\n";
+			
+			$this->gnuside_save_options( $csv_var_name , $fields);
+			
+			echo implode( ';', $csv_var_name ) . "\n";
 
 			foreach ( $users as $user ) {
 				$data = array();
@@ -132,10 +163,6 @@ class PP_EU_Export_Users {
 			
 			exit;
 		}
-	}
-	
-	private function gnuside_save_options() {
-		
 	}
 	
 	private function user_query() {
@@ -166,7 +193,7 @@ class PP_EU_Export_Users {
 
 	private function export_date_options() {
 		global $wpdb, $wp_locale;
-
+		
 		$months = $wpdb->get_results( "
 			SELECT DISTINCT YEAR( user_registered ) AS year, MONTH( user_registered ) AS month
 			FROM $wpdb->users
@@ -248,16 +275,16 @@ class PP_EU_Export_Users {
 	
 	public function gnuside_desc_array(){
 		return array(
-			'ID'					=> __( 'User ID in the database.', 'gnuside'),
-			'user_login'			=> __( 'User login.', 'gnuside'),
-			'user_pass'				=> __( 'User password.', 'gnuside'),
-			'user_nicename'			=> __( 'Short name.', 'gnuside'),
-			'user_email'			=> __( 'User e-mail.', 'gnuside'),
-			'user_url'				=> __( 'User website.', 'gnuside'),
-			'user_registered'		=> __( 'User registration date.', 'gnuside'),
-			'user_activation_key'	=> __( 'Activation key sent by e-mail.', 'gnuside'),
-			'user_status'			=> __( 'Dead value. Useless value. Deprecated.', 'gnuside'),
-			'display_name'			=> __( 'User name displayed on this website.', 'gnuside')
+			'ID'                    => __( 'User ID in the database.', 'gnuside'),
+			'user_login'            => __( 'User login.', 'gnuside'),
+			'user_pass'             => __( 'User password.', 'gnuside'),
+			'user_nicename'         => __( 'Short name.', 'gnuside'),
+			'user_email'            => __( 'User e-mail.', 'gnuside'),
+			'user_url'              => __( 'User website.', 'gnuside'),
+			'user_registered'       => __( 'User registration date.', 'gnuside'),
+			'user_activation_key'   => __( 'Activation key sent by e-mail.', 'gnuside'),
+			'user_status'           => __( 'Dead value. Useless value. Deprecated.', 'gnuside'),
+			'display_name'          => __( 'User name displayed on this website.', 'gnuside')
 		);
 	}
 	
@@ -271,17 +298,17 @@ class PP_EU_Export_Users {
 		$thead_keys = array_keys($users[0]);
 		?>
 		<br/>
-		<table class="wp-list-table widefat" id="gnuside-eutcvs-table">
+		<table class="wp-list-table widefat fixed" id="gnuside-eutcvs-table">
 			<thead>
 				<tr>
 					<th class="manage-column" >
-						<?php _e("Nom du champ", 'gnuside') ?>
+						<?php _e("Field name in the database", 'gnuside') ?>
 					</th>
 					<th class="manage-column" >
-						<?php _e("Nom du champ dans le fichier CSV", 'gnuside') ?>
+						<?php _e("Field name in the CSV file", 'gnuside') ?>
 					</th>
 					<th class="manage-column" >
-						<?php _e("Description du champ", 'gnuside') ?>
+						<?php _e("Field description", 'gnuside') ?>
 					</th>
 				</tr>
 			</thead>
