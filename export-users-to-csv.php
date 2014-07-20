@@ -236,16 +236,16 @@ class PP_EU_Export_Users {
 	
 	public function gnuside_desc_array(){
 		return array(
-			'ID'					=> '', 
-			'user_login'			=> 'User login',
-			'user_pass'				=> 'User password',
-			'user_nicename'			=> '',
-			'user_email'			=> 'User e-mail',
-			'user_url'				=> 'User website',
-			'user_registered'		=> 'User registration date',
-			'user_activation_key'	=> '',
-			'user_status'			=> '',
-			'display_name'			=> ''
+			'ID'					=> _( 'User ID', 'gnuside'),
+			'user_login'			=> _( 'User login', 'gnuside'),
+			'user_pass'				=> _( 'User password', 'gnuside'),
+			'user_nicename'			=> _( 'Short name', 'gnuside'),
+			'user_email'			=> _( 'User e-mail', 'gnuside'),
+			'user_url'				=> _( 'User website', 'gnuside'),
+			'user_registered'		=> _( 'User registration date', 'gnuside'),
+			'user_activation_key'	=> _( 'Activation key send by mail', 'gnuside'),
+			'user_status'			=> _( 'Dead value. Useless value. Deprecated', 'gnuside'),
+			'display_name'			=> _( 'User name displayed on this website', 'gnuside')
 		);
 	}
 	
@@ -263,13 +263,13 @@ class PP_EU_Export_Users {
 			<thead>
 				<tr>
 					<th class="manage-column" >
-						Nom du champ
+						<?php _e("Nom du champ", 'gnuside') ?>
 					</th>
 					<th class="manage-column" >
-						Nom du champ dans le fichier CSV
+						<?php _e("Nom du champ dans le fichier CSV", 'gnuside') ?>
 					</th>
 					<th class="manage-column" >
-						Description du champ
+						<?php _e("Description du champ", 'gnuside') ?>
 					</th>
 				</tr>
 			</thead>
