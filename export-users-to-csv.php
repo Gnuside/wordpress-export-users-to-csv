@@ -71,8 +71,8 @@ class PP_EU_Export_Users {
 			
 			foreach ($_POST as $key => $value) {
 				if( strpos($key, 'eutcvs_users_') === 0 ){
-					$users_var[] = str_replace('eutcvs_users_', '', $key);
-					
+					$cleaned_key = sanitize_key( str_replace('eutcvs_users_', '', $key) );
+					$users_var[$cleaned_key] = sanitize_text_field( $value );
 				}elseif( strpos($key, 'eutcvs_usermeta_') === 0 ) {
 					$usermeta_var[] = str_replace('eutcvs_users_', '', $key);
 				}
@@ -96,7 +96,7 @@ class PP_EU_Export_Users {
 			$sitename = sanitize_key( get_bloginfo( 'name' ) );
 			if ( ! empty( $sitename ) )
 				$sitename .= '.';
-			$filename = $sitename . 'users.' . date( 'Y-m-d-H-i-s' ) . '.csv';
+			$filename = $sitename . __('users.', 'gnuside') . date( 'Y-m-d-H-i-s' ) . '.csv';
 
 			header( 'Content-Description: File Transfer' );
 			header( 'Content-Disposition: attachment; filename=' . $filename );
@@ -108,10 +108,17 @@ class PP_EU_Export_Users {
 			//$meta_keys = $wpdb->get_results( "SELECT distinct(meta_key) FROM $wpdb->usermeta" );
 			//$meta_keys = wp_list_pluck( $meta_keys, 'meta_key' );
 			//$fields = array_merge( $data_keys, $meta_keys );
-			$fields = $users_var;
+			$fields = array_keys ($users_var);
 			
-
-			echo implode( ',',  $users_var ) . "\n";
+			$csv_var_name = array();
+			foreach ($users_var as $key => $value) {
+				if($value)
+					$csv_var_name[] = $value;
+				else
+					$csv_var_name[] = $key;
+			}
+			
+			echo implode( ',',  $csv_var_name ) . "\n";
 
 			foreach ( $users as $user ) {
 				$data = array();
@@ -126,6 +133,11 @@ class PP_EU_Export_Users {
 			exit;
 		}
 	}
+	
+	private function gnuside_save_options() {
+		
+	}
+	
 	private function user_query() {
 		global $wpdb;
 		$query = "SELECT *
@@ -243,7 +255,7 @@ class PP_EU_Export_Users {
 			'user_email'			=> __( 'User e-mail.', 'gnuside'),
 			'user_url'				=> __( 'User website.', 'gnuside'),
 			'user_registered'		=> __( 'User registration date.', 'gnuside'),
-			'user_activation_key'	=> __( 'Activation key send by e-mail.', 'gnuside'),
+			'user_activation_key'	=> __( 'Activation key sent by e-mail.', 'gnuside'),
 			'user_status'			=> __( 'Dead value. Useless value. Deprecated.', 'gnuside'),
 			'display_name'			=> __( 'User name displayed on this website.', 'gnuside')
 		);
@@ -279,11 +291,20 @@ class PP_EU_Export_Users {
 					<tr class="alternate" >
 						<td class="manage-column" >
 							<label>
-								<input type="checkbox" value="" name="<?php echo "eutcvs_users_".$value; ?>" /> 
+								<input type="checkbox" data-target-name="<?php echo "eutcvs_users_".$value; ?>"
+									onclick="
+										var nameValue = this.getAttribute('data-target-name'),
+										activeInput = jQuery('input[data-name='+nameValue+']');
+										if(this.checked){ 
+											activeInput.attr('name', nameValue);
+										} else {
+											activeInput.attr('name', '');
+										}"
+								/> 
 								<?php echo $value; ?>
 							</label>
 						</td>
-						<td><input type="text" name="" /></td>
+						<td><input type="text" data-name="<?php echo "eutcvs_users_".$value; ?>" /></td>
 						<td><?php echo $desc[$value]; ?></td>
 					</tr>
 				<?php endforeach; ?>
