@@ -78,12 +78,13 @@ class PP_EU_Export_Users {
 		
 		$options_array = array();
 		$options_array[] = $csv_columns_names;
-		$options_array['selected_var'] = implode(',', $selected_fields);
+		$options_array['selected_fields'] = implode(',', $selected_fields);
 		
 		if($this->options)
 			$this->options = $options_array + $this->options;
 		else 
 			$this->options = $options_array ;
+		
 		update_option( 'gnuside_eutcvs_plugin' , $this->options);
 	}
 	
@@ -296,6 +297,9 @@ class PP_EU_Export_Users {
 
 		if(!$users_nbr) { return; }
 		
+		$this->options = get_option( 'gnuside_eutcvs_plugin' );
+		$selected_fields = $this->options['selected_fields'] ? explode( ',', $this->options['selected_fields']) : FALSE ;
+		
 		$desc = $this->gnuside_desc_array();
 		$thead_keys = array_keys($users[0]);
 		?>
@@ -321,6 +325,10 @@ class PP_EU_Export_Users {
 						<td class="manage-column" >
 							<label>
 								<input type="checkbox" data-target-name="<?php echo "eutcvs_users_".$value; ?>"
+									<?php 
+									if($selected_fields[$value])
+										echo ' checked="checked" '
+									?>
 									onclick="
 										var nameValue = this.getAttribute('data-target-name'),
 										activeInput = jQuery('input[data-name='+nameValue+']');
