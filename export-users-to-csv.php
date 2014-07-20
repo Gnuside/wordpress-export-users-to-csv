@@ -77,11 +77,13 @@ class PP_EU_Export_Users {
 			$this->options = get_option( 'gnuside_eutcvs_plugin' );
 		
 		$options_array = array();
-		
 		$options_array[] = $csv_columns_names;
 		$options_array['selected_var'] = implode(',', $selected_fields);
 		
-		$this->options = $options_array + $this->options;
+		if($this->options)
+			$this->options = $options_array + $this->options;
+		else 
+			$this->options = $options_array ;
 		update_option( 'gnuside_eutcvs_plugin' , $this->options);
 	}
 	
@@ -141,9 +143,9 @@ class PP_EU_Export_Users {
 			$csv_var_name = array();
 			foreach ($users_var as $key => $value) {
 				if($value)
-					$csv_var_name[] = $value;
+					$csv_var_name[$key] = $value;
 				else
-					$csv_var_name[] = $key;
+					$csv_var_name[$key] = $key;
 			}
 			
 			
