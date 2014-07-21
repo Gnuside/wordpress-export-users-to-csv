@@ -89,30 +89,54 @@ class PP_EU_Export_Users {
 	}
 	
 	public function gnuside_action() {
-		if ( isset( $_POST['_wpnonce-pp-eu-export-users-users-page_export'] ) ) 
-			$this->generate_csv();
+		if ( isset( $_POST['_wpnonce-pp-eu-export-users-users-page_export'] ) ) {
+			check_admin_referer( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' );
+			if( isset( $_POST['gnuside-eutcvs-save'] ) )
+				$this->gnuside_save_data();
+			else
+				$this->generate_csv();
+		}
 	}
 	
+	public function gnuside_save_data() {
+		$users_var = $this->gnuside_extract_post_data('eutcvs_users_');
+		$usermeta_var = $this->gnuside_extract_post_data('eutcvs_usermeta_');
+		$fields = array_keys ($users_var);
+		
+		$csv_var_name = array();
+		foreach ($users_var as $key => $value) {
+			if($value)
+				$csv_var_name[$key] = $value;
+			else
+				$csv_var_name[$key] = $key;
+		}
+		$this->gnuside_save_options( $csv_var_name , $fields);
+	}
+	
+	public function gnuside_extract_post_data($prefix) {
+		$extract_data = array();
+		
+		if( !is_string($prefix) ) 
+			return $extract_data;
+		
+		foreach ($_POST as $key => $value) {
+			if( strpos($key, $prefix) === 0 ){
+				$cleaned_key = sanitize_key( str_replace($prefix, '', $key) );
+				$extract_data[$cleaned_key] = sanitize_text_field( $value );
+			}
+		}
+		
+		return $extract_data;
+	}
 	/**
 	 * Process content of CSV file
 	 *
 	 * @since 0.1
 	 **/
 	public function generate_csv() {
-		check_admin_referer( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' );
+		$users_var = $this->gnuside_extract_post_data('eutcvs_users_');
+		$usermeta_var = $this->gnuside_extract_post_data('eutcvs_usermeta_');
 
-		$users_var = array();
-		$usermeta_var = array();
-		
-		foreach ($_POST as $key => $value) {
-			if( strpos($key, 'eutcvs_users_') === 0 ){
-				$cleaned_key = sanitize_key( str_replace('eutcvs_users_', '', $key) );
-				$users_var[$cleaned_key] = sanitize_text_field( $value );
-			}elseif( strpos($key, 'eutcvs_usermeta_') === 0 ) {
-				$usermeta_var[] = str_replace('eutcvs_users_', '', $key);
-			}
-		}
-		
 		$args = array(
 			'fields' => 'all_with_meta',
 			'role' => stripslashes( $_POST['role'] )
@@ -154,7 +178,7 @@ class PP_EU_Export_Users {
 		}
 		
 		
-		$this->gnuside_save_options( $csv_var_name , $fields);
+		//$this->gnuside_save_options( $csv_var_name , $fields);
 		
 		echo implode( ';', $csv_var_name ) . "\n";
 
@@ -243,7 +267,7 @@ class PP_EU_Export_Users {
 			echo '<div class="updated"><p><strong>' . __( 'No user found.', 'export-users-to-csv' ) . '</strong></p></div>';
 		}
 		?>
-			<form method="post" action="" enctype="multipart/form-data">
+			<form method="post" action="" enctype="multipart/form-data" data-id="gnuside-eutcvs-form" >
 				<?php wp_nonce_field( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' ); ?>
 				<table class="form-table">
 					<tr valign="top">
@@ -280,7 +304,17 @@ class PP_EU_Export_Users {
 				</table>
 				<p class="submit">
 					<input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
-					<input type="submit" class="button-primary" value="<?php _e( 'Save Changes', 'export-users-to-csv' ); ?>" />
+					<input type="submit" class="button-primary" data-name="gnuside-eutcvs-save" value="<?php _e( 'Save Changes', 'export-users-to-csv' ); ?>" 
+						onclick="
+							var nameValue = this.getAttribute('data-name'),
+								inputCsvName = jQuery( 'input:text[data-name]' );
+							jQuery(this).attr('name', nameValue); 
+							inputCsvName.each( function(){
+								var nameValue = this.getAttribute('data-name');
+								jQuery(this).attr('name', nameValue); 
+							});
+						"
+					/>
 					<input type="submit" class="button-primary" value="<?php _e( 'Export', 'export-users-to-csv' ); ?>" />
 				</p>
 			</form>
@@ -313,7 +347,6 @@ class PP_EU_Export_Users {
 		$selected_fields = $this->options['selected_fields'] ? explode( ',', $this->options['selected_fields']) : array() ;
 		$csv_columns_names = $this->options['csv_columns_names'] ? $this->options['csv_columns_names'] : array();
 		$desc = $this->gnuside_desc_array();
-		//$thead_keys = array_keys($users_db_columns[0]);
 		
 		?>
 		<br/>
@@ -339,7 +372,8 @@ class PP_EU_Export_Users {
 							<label>
 								<input type="checkbox" data-target-name="<?php echo "eutcvs_users_".$value; ?>"
 									<?php 
-									$active = in_array($value, $selected_fields);
+									$active = in_array( strtolower($value), $selected_fields );
+									
 									if( $active )
 										echo ' checked="checked" ';
 									?>
@@ -350,7 +384,8 @@ class PP_EU_Export_Users {
 											activeInput.attr('name', nameValue);
 										} else {
 											activeInput.attr('name', '');
-										}"
+										}
+									"
 								/> 
 								<?php echo $value; ?>
 							</label>
@@ -367,7 +402,9 @@ class PP_EU_Export_Users {
 							?>
 							/>
 						</td>
-						<td><?php echo $desc[$value]; ?></td>
+						<td>
+							<?php echo $desc[$value]; ?>
+						</td>
 					</tr>
 				<?php endforeach; ?>
 			</tbody>
