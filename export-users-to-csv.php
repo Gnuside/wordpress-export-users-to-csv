@@ -168,13 +168,20 @@ class PP_EU_Export_Users {
 		}
 	}
 	
-	private function user_query() {
+	private function gnuside_get_db_columns_names($table_name) {
 		global $wpdb;
-		$query = "SELECT *
-				FROM $wpdb->users";
-				
-		$users = $wpdb->get_results( $query, ARRAY_A);
-		return $users;
+		
+		$query = "SHOW COLUMNS FROM `$table_name`";
+		$columns_info = $wpdb->get_results( $query, ARRAY_A);
+		
+		if (!$columns_info)
+			return array();
+		
+		$columns_names = array();
+		foreach ($columns_info as $column_info ) {
+			$columns_names[] = $column_info['Field'];
+		}
+		return $columns_names;
 	}
 	
 	public function pre_user_query( $user_search ) {
@@ -292,16 +299,18 @@ class PP_EU_Export_Users {
 	}
 	
 	private function gnuside_display_all_fields() {
-		$users = $this->user_query();
-		$users_nbr = count($users);
+		global $wpdb;
+		$users_db_columns = $this->gnuside_get_db_columns_names($wpdb->users);
+		$columns_nbr = count($users_db_columns);
 
-		if(!$users_nbr) { return; }
+		if(!$columns_nbr) { return; }
 		
 		$this->options = get_option( 'gnuside_eutcvs_plugin' );
 		$selected_fields = $this->options['selected_fields'] ? explode( ',', $this->options['selected_fields']) : array() ;
 		$csv_columns_names = $this->options['csv_columns_names'] ? $this->options['csv_columns_names'] : array();
 		$desc = $this->gnuside_desc_array();
-		$thead_keys = array_keys($users[0]);
+		//$thead_keys = array_keys($users_db_columns[0]);
+		
 		?>
 		<br/>
 		<table class="wp-list-table widefat fixed" id="gnuside-eutcvs-table">
@@ -320,7 +329,7 @@ class PP_EU_Export_Users {
 			</thead>
 		
 			<tbody class="" id="" >
-				<?php foreach ($thead_keys as $value) : ?>
+				<?php foreach ($users_db_columns as $value) : ?>
 					<tr class="alternate" >
 						<td class="manage-column" >
 							<label>
