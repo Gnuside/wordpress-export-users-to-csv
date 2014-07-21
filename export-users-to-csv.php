@@ -55,7 +55,7 @@ class PP_EU_Export_Users {
 	 **/
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_admin_pages' ) );
-		add_action( 'init', array( $this, 'generate_csv' ) );
+		add_action( 'init', array( $this, 'gnuside_action' ) );
 		//add_filter( 'pp_eu_exclude_data', array( $this, 'exclude_data' ) );
 	}
 	
@@ -88,84 +88,87 @@ class PP_EU_Export_Users {
 		update_option( 'gnuside_eutcvs_plugin' , $this->options);
 	}
 	
+	public function gnuside_action() {
+		if ( isset( $_POST['_wpnonce-pp-eu-export-users-users-page_export'] ) ) 
+			$this->generate_csv();
+	}
+	
 	/**
 	 * Process content of CSV file
 	 *
 	 * @since 0.1
 	 **/
 	public function generate_csv() {
-		if ( isset( $_POST['_wpnonce-pp-eu-export-users-users-page_export'] ) ) {
-			check_admin_referer( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' );
-			
-			$users_var = array();
-			$usermeta_var = array();
-			
-			foreach ($_POST as $key => $value) {
-				if( strpos($key, 'eutcvs_users_') === 0 ){
-					$cleaned_key = sanitize_key( str_replace('eutcvs_users_', '', $key) );
-					$users_var[$cleaned_key] = sanitize_text_field( $value );
-				}elseif( strpos($key, 'eutcvs_usermeta_') === 0 ) {
-					$usermeta_var[] = str_replace('eutcvs_users_', '', $key);
-				}
+		check_admin_referer( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' );
+
+		$users_var = array();
+		$usermeta_var = array();
+		
+		foreach ($_POST as $key => $value) {
+			if( strpos($key, 'eutcvs_users_') === 0 ){
+				$cleaned_key = sanitize_key( str_replace('eutcvs_users_', '', $key) );
+				$users_var[$cleaned_key] = sanitize_text_field( $value );
+			}elseif( strpos($key, 'eutcvs_usermeta_') === 0 ) {
+				$usermeta_var[] = str_replace('eutcvs_users_', '', $key);
 			}
-			
-			$args = array(
-				'fields' => 'all_with_meta',
-				'role' => stripslashes( $_POST['role'] )
-			);
-
-			add_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
-			$users = get_users( $args );
-			remove_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
-/*
-			if ( ! $users ) {
-				$referer = add_query_arg( 'error', 'empty', wp_get_referer() );
-				wp_redirect( $referer );
-				exit;
-			}*/
-
-			$sitename = sanitize_key( get_bloginfo( 'name' ) );
-			if ( ! empty( $sitename ) )
-				$sitename .= '.';
-			$filename = $sitename . __('users.', 'gnuside') . date( 'Y-m-d-H-i-s' ) . '.csv';
-
-			header( 'Content-Description: File Transfer' );
-			header( 'Content-Disposition: attachment; filename=' . $filename );
-			header( 'Content-Type: text/csv; charset=' . get_option( 'blog_charset' ), true );
-
-
-			global $wpdb;
-
-			//$meta_keys = $wpdb->get_results( "SELECT distinct(meta_key) FROM $wpdb->usermeta" );
-			//$meta_keys = wp_list_pluck( $meta_keys, 'meta_key' );
-			//$fields = array_merge( $data_keys, $meta_keys );
-			$fields = array_keys ($users_var);
-			
-			$csv_var_name = array();
-			foreach ($users_var as $key => $value) {
-				if($value)
-					$csv_var_name[$key] = $value;
-				else
-					$csv_var_name[$key] = $key;
-			}
-			
-			
-			$this->gnuside_save_options( $csv_var_name , $fields);
-			
-			echo implode( ';', $csv_var_name ) . "\n";
-
-			foreach ( $users as $user ) {
-				$data = array();
-				foreach ( $fields as $field ) {
-					$value = isset( $user->{$field} ) ? $user->{$field} : '';
-					$value = is_array( $value ) ? serialize( $value ) : $value;
-					$data[] = '"' . str_replace( '"', '""', $value ) . '"';
-				}
-				echo implode( ';', $data ) . "\n";
-			}
-			
-			exit;
 		}
+		
+		$args = array(
+			'fields' => 'all_with_meta',
+			'role' => stripslashes( $_POST['role'] )
+		);
+
+		add_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
+		$users = get_users( $args );
+		remove_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
+/*
+		if ( ! $users ) {
+			$referer = add_query_arg( 'error', 'empty', wp_get_referer() );
+			wp_redirect( $referer );
+			exit;
+		}*/
+
+		$sitename = sanitize_key( get_bloginfo( 'name' ) );
+		if ( ! empty( $sitename ) )
+			$sitename .= '.';
+		$filename = $sitename . __('users.', 'gnuside') . date( 'Y-m-d-H-i-s' ) . '.csv';
+
+		header( 'Content-Description: File Transfer' );
+		header( 'Content-Disposition: attachment; filename=' . $filename );
+		header( 'Content-Type: text/csv; charset=' . get_option( 'blog_charset' ), true );
+
+
+		global $wpdb;
+
+		//$meta_keys = $wpdb->get_results( "SELECT distinct(meta_key) FROM $wpdb->usermeta" );
+		//$meta_keys = wp_list_pluck( $meta_keys, 'meta_key' );
+		//$fields = array_merge( $data_keys, $meta_keys );
+		$fields = array_keys ($users_var);
+		
+		$csv_var_name = array();
+		foreach ($users_var as $key => $value) {
+			if($value)
+				$csv_var_name[$key] = $value;
+			else
+				$csv_var_name[$key] = $key;
+		}
+		
+		
+		$this->gnuside_save_options( $csv_var_name , $fields);
+		
+		echo implode( ';', $csv_var_name ) . "\n";
+
+		foreach ( $users as $user ) {
+			$data = array();
+			foreach ( $fields as $field ) {
+				$value = isset( $user->{$field} ) ? $user->{$field} : '';
+				$value = is_array( $value ) ? serialize( $value ) : $value;
+				$data[] = '"' . str_replace( '"', '""', $value ) . '"';
+			}
+			echo implode( ';', $data ) . "\n";
+		}
+		
+		exit;
 	}
 	
 	private function gnuside_get_db_columns_names($table_name) {
@@ -277,6 +280,7 @@ class PP_EU_Export_Users {
 				</table>
 				<p class="submit">
 					<input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
+					<input type="submit" class="button-primary" value="<?php _e( 'Save Changes', 'export-users-to-csv' ); ?>" />
 					<input type="submit" class="button-primary" value="<?php _e( 'Export', 'export-users-to-csv' ); ?>" />
 				</p>
 			</form>
