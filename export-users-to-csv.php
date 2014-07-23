@@ -79,7 +79,7 @@ class PP_EU_Export_Users {
 		$options_array = array();
 		$options_array['csv_columns_names'] = $csv_columns_names;
 		$options_array['selected_fields'] = implode(',', $selected_fields);
-		
+
 		if($this->options)
 			$this->options = $options_array + $this->options;
 		else 
@@ -100,8 +100,14 @@ class PP_EU_Export_Users {
 	
 	public function gnuside_save_data() {
 		$users_var = $this->gnuside_extract_post_data('eutcvs_users_');
-		$usermeta_var = $this->gnuside_extract_post_data('eutcvs_usermeta_');
-		$fields = array_keys ($users_var);
+		//$usermeta_var = $this->gnuside_extract_post_data('eutcvs_usermeta_');
+		$checked_fields = $this->gnuside_extract_post_data('eutcvs_checked_users_');
+
+		foreach ($checked_fields as $key => $value) {
+			if( $value === 'checked' )
+				unset($checked_fields[key]);
+		}
+		$checked_fields = array_keys( $checked_fields );
 		
 		$csv_var_name = array();
 		foreach ($users_var as $key => $value) {
@@ -110,7 +116,8 @@ class PP_EU_Export_Users {
 			else
 				$csv_var_name[$key] = $key;
 		}
-		$this->gnuside_save_options( $csv_var_name , $fields);
+		
+		$this->gnuside_save_options( $csv_var_name , $checked_fields );
 	}
 	
 	public function gnuside_extract_post_data($prefix) {
@@ -135,8 +142,15 @@ class PP_EU_Export_Users {
 	 **/
 	public function generate_csv() {
 		$users_var = $this->gnuside_extract_post_data('eutcvs_users_');
-		$usermeta_var = $this->gnuside_extract_post_data('eutcvs_usermeta_');
-
+		//$usermeta_var = $this->gnuside_extract_post_data('eutcvs_usermeta_');
+		$checked_fields = $this->gnuside_extract_post_data('eutcvs_checked_users_');
+		
+		foreach ($checked_fields as $key => $value) {
+			if( $value === 'checked' )
+				unset($checked_fields[key]);
+		}
+		$checked_fields = array_keys( $checked_fields );
+		
 		$args = array(
 			'fields' => 'all_with_meta',
 			'role' => stripslashes( $_POST['role'] )
@@ -167,20 +181,14 @@ class PP_EU_Export_Users {
 		//$meta_keys = $wpdb->get_results( "SELECT distinct(meta_key) FROM $wpdb->usermeta" );
 		//$meta_keys = wp_list_pluck( $meta_keys, 'meta_key' );
 		//$fields = array_merge( $data_keys, $meta_keys );
-		$fields = array_keys ($users_var);
+		$fields = $checked_fields;
+		$csv_col_name = array();
 		
-		$csv_var_name = array();
-		foreach ($users_var as $key => $value) {
-			if($value)
-				$csv_var_name[$key] = $value;
-			else
-				$csv_var_name[$key] = $key;
+		foreach ($checked_fields as $value) {
+			$csv_col_name[] = $users_var[$value];
 		}
 		
-		
-		//$this->gnuside_save_options( $csv_var_name , $fields);
-		
-		echo implode( ';', $csv_var_name ) . "\n";
+		echo implode( ';', $csv_col_name ) . "\n";
 
 		foreach ( $users as $user ) {
 			$data = array();
@@ -370,20 +378,21 @@ class PP_EU_Export_Users {
 					<tr class="alternate" >
 						<td class="manage-column" >
 							<label>
-								<input type="checkbox" data-target-name="<?php echo "eutcvs_users_".$value; ?>"
+								<input type="checkbox" name="<?php echo "eutcvs_checked_users_".$value; ?>"
 									<?php 
 									$active = in_array( strtolower($value), $selected_fields );
 									
-									if( $active )
+									if( $active ) {
 										echo ' checked="checked" ';
+										echo ' value="checked" ';
+									}
 									?>
 									onclick="
-										var nameValue = this.getAttribute('data-target-name'),
-										activeInput = jQuery('input[data-name='+nameValue+']');
+										var $this = jQuery(this);
 										if(this.checked){ 
-											activeInput.attr('name', nameValue);
+											$this.attr('value', 'checked');
 										} else {
-											activeInput.attr('name', '');
+											$this.attr('value', '');
 										}
 									"
 								/> 
@@ -391,10 +400,9 @@ class PP_EU_Export_Users {
 							</label>
 						</td>
 						<td>
-							<input type="text" data-name="<?php echo "eutcvs_users_".$value; ?>" 
+							<input type="text"
 							<?php 
-								if($active)
-									echo ' name="eutcvs_users_'.$value.'" ';
+								echo ' name="eutcvs_users_'.$value.'" ';
 								if(! $csv_columns_names [$value])
 									echo ' value="'.$value.'"';
 								else 
