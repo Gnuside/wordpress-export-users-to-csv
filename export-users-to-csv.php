@@ -76,7 +76,7 @@ class PP_EU_Export_Users {
 	}
 	
 	
-	private function gnuside_save_options( $csv_columns_names, $selected_fields ){
+	private function gnuside_save_options( $csv_columns_names, $selected_fields, $meta_fields ){
 		if( !is_array($csv_columns_names) || !is_array($selected_fields) ) 
 			return;
 		
@@ -86,12 +86,15 @@ class PP_EU_Export_Users {
 		$options_array = array();
 		$options_array['csv_columns_names'] = $csv_columns_names;
 		$options_array['selected_fields'] = implode(',', $selected_fields);
+		
+		if( is_array($meta_fields) )
+			$options_array['meta_fields'] = $meta_fields;
 
 		if($this->options)
 			$this->options = $options_array + $this->options;
 		else 
 			$this->options = $options_array ;
-		
+
 		update_option( 'gnuside_eutcvs_plugin' , $this->options);
 	}
 	
@@ -105,10 +108,10 @@ class PP_EU_Export_Users {
 		}
 	}
 	
-	public function gnuside_save_data() {
-		$users_var = $this->gnuside_extract_post_data('eutcvs_users_');
-		//$usermeta_var = $this->gnuside_extract_post_data('eutcvs_usermeta_');
+	private function gnuside_save_data() {
+		$users_fields = $this->gnuside_extract_post_data('eutcvs_users_');
 		$checked_fields = $this->gnuside_extract_post_data('eutcvs_checked_users_');
+		$meta_fields = $this->gnuside_extract_post_data_meta('eutcvs_meta');
 
 		foreach ($checked_fields as $key => $value) {
 			if( $value === 'checked' )
@@ -117,17 +120,31 @@ class PP_EU_Export_Users {
 		$checked_fields = array_keys( $checked_fields );
 		
 		$csv_var_name = array();
-		foreach ($users_var as $key => $value) {
+		foreach ($users_fields as $key => $value) {
 			if($value)
 				$csv_var_name[$key] = $value;
 			else
 				$csv_var_name[$key] = $key;
 		}
-		
-		$this->gnuside_save_options( $csv_var_name , $checked_fields );
+			
+		$this->gnuside_save_options( $csv_var_name , $checked_fields, $meta_fields );
 	}
 	
-	public function gnuside_extract_post_data($prefix) {
+	private function gnuside_extract_post_data_meta() {
+		$extract_data = array();
+
+		if(isset($_POST['eutcvs_meta']) && is_array($_POST['eutcvs_meta'])){
+			$tab_meta = $_POST['eutcvs_meta'];
+			foreach ($tab_meta as $value) {
+				$extract_data[] = $this->gnuside_sanitize_array ( $value );
+			}
+		}
+		
+		return $extract_data;
+		
+	}
+	
+	private function gnuside_extract_post_data($prefix) {
 		$extract_data = array();
 		
 		if( !is_string($prefix) ) 
@@ -136,11 +153,57 @@ class PP_EU_Export_Users {
 		foreach ($_POST as $key => $value) {
 			if( strpos($key, $prefix) === 0 ){
 				$cleaned_key = sanitize_key( str_replace($prefix, '', $key) );
-				$extract_data[$cleaned_key] = sanitize_text_field( $value );
+				if( is_array($value) )
+					$extract_data[$cleaned_key] = $this->gnuside_sanitize_array ( $value );
+				else
+					$extract_data[$cleaned_key] = sanitize_text_field( $value );
 			}
 		}
-		
+
 		return $extract_data;
+	}
+
+	function gnuside_sanitize_array ( $data = array() ) {
+		if (!is_array($data) || !count($data)) {
+			return array();
+		}
+		
+		foreach ($data as $k => $v) {
+			if (!is_array($v) ) {
+				$data[$k] = sanitize_text_field($v);
+			}
+			if (is_array($v)) {
+				$data[$k] = $this->gnuside_sanitize_array($v);
+			}
+		}
+		return $data;
+	}
+	private function get_meta_db($meta_fields, $users_id){
+		if( !is_array($meta_fields) || empty($meta_fields) )
+			return array();
+		
+		global $wpdb;
+		$my_query = "SELECT * ";
+		$my_query .= "FROM  $wpdb->usermeta ";
+		$my_query .= "WHERE  ";
+		
+		$first = TRUE;
+		foreach ($meta_fields as $value) {
+			if($first){
+				$my_query .= "meta_key LIKE '$value' ";
+				$first = FALSE;
+				continue;
+			}
+			$my_query .= "OR meta_key LIKE '$value' ";
+		}
+		
+		if( is_array($users_id) && !empty($users_id) ){
+			$my_query .= "AND user_id in (". implode(',', $users_id) . ")";
+		}
+		
+		$mysql_query = $wpdb->prepare( $my_query, '');
+		$result = $wpdb->get_results($mysql_query, ARRAY_A);
+		return $result;
 	}
 	/**
 	 * Process content of CSV file
@@ -149,8 +212,23 @@ class PP_EU_Export_Users {
 	 **/
 	public function generate_csv() {
 		$users_var = $this->gnuside_extract_post_data('eutcvs_users_');
-		//$usermeta_var = $this->gnuside_extract_post_data('eutcvs_usermeta_');
 		$checked_fields = $this->gnuside_extract_post_data('eutcvs_checked_users_');
+		$meta_fields = $this->gnuside_extract_post_data_meta();
+		$meta_db_id = array();
+		$meta_csv_name = array();
+		
+		foreach ($meta_fields as $key => $field) {
+			if( !isset($field['checked']) || $field['checked'] != 'checked' || !isset($field['db_id']) || empty($field['db_id']) ){
+				unset($meta_fields[$key]);
+				continue;
+			}
+			$meta_db_id[] = $field['db_id'];
+			if( isset($field['name']) && !empty($field['name']) )
+				$meta_csv_name[] = $field['name'];
+			else
+				$meta_csv_name[] = $field['db_id'];
+		}
+		
 		
 		foreach ($checked_fields as $key => $value) {
 			if( $value === 'checked' )
@@ -160,12 +238,18 @@ class PP_EU_Export_Users {
 		
 		$args = array(
 			'fields' => 'all_with_meta',
-			'role' => stripslashes( $_POST['role'] )
+			'role' => sanitize_text_field( $_POST['role'] )
 		);
 
 		add_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
 		$users = get_users( $args );
 		remove_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
+		
+		$users_id = array();
+		foreach ($users as $user) {
+			$users_id[] = $user->ID;
+		}
+		$db_meta_rows = $this->get_meta_db($meta_db_id, $users_id );
 /*
 		if ( ! $users ) {
 			$referer = add_query_arg( 'error', 'empty', wp_get_referer() );
@@ -185,9 +269,6 @@ class PP_EU_Export_Users {
 
 		global $wpdb;
 
-		//$meta_keys = $wpdb->get_results( "SELECT distinct(meta_key) FROM $wpdb->usermeta" );
-		//$meta_keys = wp_list_pluck( $meta_keys, 'meta_key' );
-		//$fields = array_merge( $data_keys, $meta_keys );
 		$fields = $checked_fields;
 		$csv_col_name = array();
 		
@@ -195,14 +276,21 @@ class PP_EU_Export_Users {
 			$csv_col_name[] = $users_var[$value];
 		}
 		
+		$csv_col_name = array_merge($csv_col_name, $meta_csv_name);
 		echo implode( ';', $csv_col_name ) . "\n";
-
+		
 		foreach ( $users as $user ) {
 			$data = array();
 			foreach ( $fields as $field ) {
 				$value = isset( $user->{$field} ) ? $user->{$field} : '';
 				$value = is_array( $value ) ? serialize( $value ) : $value;
 				$data[] = '"' . str_replace( '"', '""', $value ) . '"';
+			}
+			foreach ($db_meta_rows as $key => $row) {
+				if($row["user_id"] == $user->ID){
+					$data[] = '"' . str_replace( '"', '""', $row["meta_value"] ) . '"';
+					unset($db_meta_rows[key]);
+				}
 			}
 			echo implode( ';', $data ) . "\n";
 		}
@@ -277,6 +365,7 @@ class PP_EU_Export_Users {
 	
 		<div class="wrap">
 		<h2><?php _e( 'Export users to a CSV file', 'export-users-to-csv' ); ?></h2>
+		<p><?php _e( 'Don\'t forget to save your changes', 'gnuside' ); ?></p>
 		<?php
 		if ( isset( $_GET['error'] ) ) {
 			echo '<div class="updated"><p><strong>' . __( 'No user found.', 'export-users-to-csv' ) . '</strong></p></div>';
@@ -286,7 +375,7 @@ class PP_EU_Export_Users {
 				<?php wp_nonce_field( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' ); ?>
 				<table class="form-table">
 					<tr valign="top">
-						<th scope="row"><label for"pp_eu_users_role"><?php _e( 'Role', 'export-users-to-csv' ); ?></label></th>
+						<th scope="row"><label for"pp_eu_users_role"><?php _e( 'User\'s role', 'export-users-to-csv' ); ?></label></th>
 						<td>
 							<select name="role" id="pp_eu_users_role">
 								<?php
@@ -315,24 +404,72 @@ class PP_EU_Export_Users {
 							</select>
 						</td>
 					</tr>
-					<?php $this->gnuside_display_all_fields(); ?>
 				</table>
+				<?php $this->gnuside_display_users_fields(); ?>
+				<?php $this->gnuside_display_meta_fields(); ?>
 				<p class="submit">
 					<input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
-					<input type="submit" class="button-primary" data-name="gnuside-eutcvs-save" value="<?php _e( 'Save Changes', 'export-users-to-csv' ); ?>" 
-						onclick="
-							var nameValue = this.getAttribute('data-name'),
-								inputCsvName = jQuery( 'input:text[data-name]' );
-							jQuery(this).attr('name', nameValue); 
-							inputCsvName.each( function(){
-								var nameValue = this.getAttribute('data-name');
-								jQuery(this).attr('name', nameValue); 
-							});
-						"
-					/>
+					<input type="submit" class="button-primary" data-name="gnuside-eutcvs-save" value="<?php _e( 'Save Changes', 'export-users-to-csv' ); ?>" />
 					<input type="submit" class="button-primary" value="<?php _e( 'Export', 'export-users-to-csv' ); ?>" />
 				</p>
 			</form>
+		<?php
+	}
+
+	public function gnuside_display_meta_fields(){
+		$this->options = get_option( 'gnuside_eutcvs_plugin' );
+		$meta_fields = isset( $this->options['meta_fields'] ) ? $this->options['meta_fields'] : array() ;
+		?>
+			<br/>
+			<h2><?php _e('Users meta fields', 'gnuside') ?></h2>
+			<table class="wp-list-table widefat fixed" id="gnuside-eutcvs-table-usermeta">
+				<thead>
+					<tr>
+						<th class="manage-column" >
+							<?php _e("Field name in the database : check to export", 'gnuside') ?>
+						</th>
+						<th class="manage-column" >
+							<?php _e("Field name in the CSV file", 'gnuside') ?>
+						</th>
+						<th class="manage-column" >
+							<?php _e("Field description", 'gnuside') ?>
+						</th>
+						<th class="manage-column" >
+						</th>
+					</tr>
+				</thead>
+			
+				<tbody class="" id="" >
+					<?php if( is_array($meta_fields) && !empty($meta_fields) ) : ?>
+						<?php foreach ($meta_fields as $field) :  ?>
+							<?php $db_id = $field['db_id']; ?>
+							<tr class="alternate" >
+								<td class="manage-column" >
+									<label>
+										<input type="checkbox" name="<?php echo "eutcvs_meta[$db_id][checked]"; ?>" data-toggle="gnuside-eutcvs-checkbox"
+											<?php echo ( isset($field['checked']) && $field['checked'] ) ? ' checked="checked" value="checked" ' : '' ; ?> /> 
+										<input data-toggle="eutcvs_meta_id" data-id="<?php echo $db_id; ?>" name="<?php echo "eutcvs_meta[$db_id][db_id]"; ?>" value="<?php echo $db_id; ?>" type="text" />
+									</label>
+								</td>
+								<td>
+									<input type="text" type="text" name="<?php echo "eutcvs_meta[$db_id][name]"; ?>" value="<?php echo $field['name']; ?>" />
+								</td>
+								<td>
+									<input type="text" name="<?php echo "eutcvs_meta[$db_id][desc]"; ?>" value="<?php echo $field['desc']; ?>"/>
+								</td>
+								<td>
+									<input type="button" class="button-secondary" value="remove" data-toggle="gnuside-eutcvs-remove" />
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+					<tr data-toggle="gnuside-eutcvs-usermeta-button">
+						<td>
+							<input type="button" class="button-primary" value="<?php _e('add field', 'gnuside') ?>" data-toggle="gnuside-eutcvs-add-field" />
+						</td>
+					</tr>
+				</tbody>
+			</table>
 		<?php
 	}
 	
@@ -351,7 +488,7 @@ class PP_EU_Export_Users {
 		);
 	}
 	
-	private function gnuside_display_all_fields() {
+	private function gnuside_display_users_fields() {
 		global $wpdb;
 		$users_db_columns = $this->gnuside_get_db_columns_names($wpdb->users);
 		$columns_nbr = count($users_db_columns);
@@ -363,124 +500,61 @@ class PP_EU_Export_Users {
 		$csv_columns_names = isset( $this->options['csv_columns_names'] ) ? $this->options['csv_columns_names'] : array() ;
 		$desc = $this->gnuside_desc_array();
 		
-		$selected_meta_fields = isset( $this->options['selected_meta_fields'] ) ? explode( ',', $this->options['selected_meta_fields']) : array() ;
-		$db_meta_fields = isset( $this->options['db_meta_fields'] ) ? explode( ',', $this->options['db_meta_fields']) : array() ;
-		$csv_columns_names_meta = isset( $this->options['csv_columns_names_meta'] ) ? $this->options['csv_columns_names_meta'] : array() ;
-		$desc_meta_fields = isset( $this->options['desc_meta_fields'] ) ? explode( ',', $this->options['desc_meta_fields']) : array() ;
-		
 		?>
-		<br/>
-		<table class="wp-list-table widefat fixed" id="gnuside-eutcvs-users">
-			<thead>
-				<tr>
-					<th class="manage-column" >
-						<?php _e("Users table : Field name in the database", 'gnuside') ?>
-					</th>
-					<th class="manage-column" >
-						<?php _e("Field name in the CSV file", 'gnuside') ?>
-					</th>
-					<th class="manage-column" >
-						<?php _e("Field description", 'gnuside') ?>
-					</th>
-				</tr>
-			</thead>
-		
-			<tbody class="" id="" >
-				<?php foreach ($users_db_columns as $value) : ?>
-					<tr class="alternate" >
-						<td class="manage-column" >
-							<label>
-								<input type="checkbox" name="<?php echo "eutcvs_checked_users_".$value; ?>" data-toggle="gnuside-eutcvs-checkbox"
-									<?php 
-										$active = in_array( strtolower($value), $selected_fields );
-										
-										if( $active ) {
-											echo ' checked="checked" ';
-											echo ' value="checked" ';
-										}
-									?>
-								/> 
-								<?php echo $value; ?>
-							</label>
-						</td>
-						<td>
-							<input type="text"
-							<?php 
-								echo ' name="eutcvs_users_'.$value.'" ';
-								if(! $csv_columns_names [$value])
-									echo ' value="'.$value.'"';
-								else 
-									echo ' value="'.$csv_columns_names[$value].'"';
-							?>
-							/>
-						</td>
-						<td>
-							<?php echo $desc[$value]; ?>
-						</td>
+			<br/>
+			<h2><?php _e('Users fields', 'gnuside') ?></h2>
+			<table class="wp-list-table widefat fixed" id="gnuside-eutcvs-users">
+				<thead>
+					<tr>
+						<th class="manage-column" >
+							<?php _e("Field name in the database : check to export", 'gnuside') ?>
+						</th>
+						<th class="manage-column" >
+							<?php _e("Field name in the CSV file", 'gnuside') ?>
+						</th>
+						<th class="manage-column" >
+							<?php _e("Field description", 'gnuside') ?>
+						</th>
 					</tr>
-				<?php endforeach; ?>
-				
-			</tbody>
-		</table>
-		
-		<br/>
-		<table class="wp-list-table widefat fixed" id="gnuside-eutcvs-table-usermeta">
-			<thead>
-				<tr>
-					<th class="manage-column" >
-						<?php _e("User meta table : Add name in the database", 'gnuside') ?>
-					</th>
-					<th class="manage-column" >
-						<?php _e("Field name in the CSV file", 'gnuside') ?>
-					</th>
-					<th class="manage-column" >
-						<?php _e("Field description", 'gnuside') ?>
-					</th>
-				</tr>
-			</thead>
-		
-			<tbody class="" id="" >
-				<?php if( ! empty($db_meta_fields) ) : ?>
-					<tr class="alternate" >
-						<td class="manage-column" >
-							<label>
-								<input type="checkbox" name="<?php echo "eutcvs_checked_usermeta_".$value; ?>" data-toggle="gnuside-eutcvs-checkbox"
-									<?php 
-										$active = in_array( strtolower($value), $selected_fields );
-										
-										if( $active ) {
-											echo ' checked="checked" ';
-											echo ' value="checked" ';
-										}
-									?>
-								/> 
-								<input type="text" />
-							</label>
-						</td>
-						<td>
-							<input type="text"
-							<?php 
-								echo ' name="eutcvs_users_'.$value.'" ';
-								if(! $csv_columns_names [$value])
-									echo ' value="'.$value.'"';
-								else 
-									echo ' value="'.$csv_columns_names[$value].'"';
-							?>
-							/>
-						</td>
-						<td>
-							<input type="text" />
-						</td>
-					</tr>
-				<?php endif; ?>
-				<tr data-toggle="gnuside-eutcvs-usermeta-button">
-					<td>
-						<input type="button" class="button-primary" value="<?php _e('add field', 'gnuside') ?>" data-toggle="gnuside-eutcvs-add-field" />
-					</td>
-				</tr>
-			</tbody>
-		</table>
-
+				</thead>
+			
+				<tbody class="" id="" >
+					<?php foreach ($users_db_columns as $value) : ?>
+						<tr class="alternate" >
+							<td class="manage-column" >
+								<label>
+									<input type="checkbox" name="<?php echo "eutcvs_checked_users_".$value; ?>" data-toggle="gnuside-eutcvs-checkbox"
+										<?php 
+											$active = in_array( strtolower($value), $selected_fields );
+											
+											if( $active ) {
+												echo ' checked="checked" ';
+												echo ' value="checked" ';
+											}
+										?>
+									/> 
+									<?php echo $value; ?>
+								</label>
+							</td>
+							<td>
+								<input type="text"
+								<?php 
+									echo ' name="eutcvs_users_'.$value.'" ';
+									if(! $csv_columns_names [$value])
+										echo ' value="'.$value.'"';
+									else 
+										echo ' value="'.$csv_columns_names[$value].'"';
+								?>
+								/>
+							</td>
+							<td>
+								<?php echo $desc[$value]; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+					
+				</tbody>
+			</table>
 		<?php
 	}
 }
