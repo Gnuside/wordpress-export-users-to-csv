@@ -108,11 +108,35 @@ class PP_EU_Export_Users {
 		}
 	}
 	
+	private function get_meta_config() {
+		$path = dirname(__FILE__).'/export-users-to-csv.inc.php';
+		if( file_exists($path) ) {
+			$config = include $path;
+			if( is_array($config) && !empty($config) ){
+				$config = $this->gnuside_sanitize_array($config);
+				$meta = array();
+				foreach ($config as $key => $value) {
+					if( empty($name) ){
+						$meta[] = array( 'db_id' => $key );
+					}else{
+						$meta[] = array(
+							'db_id' => $key,
+							'name'  => $value
+						);
+					}
+				}
+				
+				return $meta;
+			}
+		}
+		return array();
+	}
+	
 	private function gnuside_save_data() {
 		$users_fields = $this->gnuside_extract_post_data('eutcvs_users_');
 		$checked_fields = $this->gnuside_extract_post_data('eutcvs_checked_users_');
 		$meta_fields = $this->gnuside_extract_post_data_meta('eutcvs_meta');
-
+		
 		foreach ($checked_fields as $key => $value) {
 			if( $value === 'checked' )
 				unset($checked_fields[key]);
@@ -167,13 +191,14 @@ class PP_EU_Export_Users {
 		if (!is_array($data) || !count($data)) {
 			return array();
 		}
+		$sani = array();
 		
 		foreach ($data as $k => $v) {
 			if (!is_array($v) ) {
-				$data[$k] = sanitize_text_field($v);
+				$sani[ sanitize_key($k) ] = sanitize_text_field($v);
 			}
 			if (is_array($v)) {
-				$data[$k] = $this->gnuside_sanitize_array($v);
+				$sani[ sanitize_key($k) ] = $this->gnuside_sanitize_array($v);
 			}
 		}
 		return $data;
@@ -418,7 +443,22 @@ class PP_EU_Export_Users {
 
 	public function gnuside_display_meta_fields(){
 		$this->options = get_option( 'gnuside_eutcvs_plugin' );
-		$meta_fields = isset( $this->options['meta_fields'] ) ? $this->options['meta_fields'] : array() ;
+		$meta_user_fields = isset( $this->options['meta_fields'] ) ? $this->options['meta_fields'] : array() ;
+		
+		$meta_fields = $this->get_meta_config();
+		
+		foreach ($meta_fields as $key => $field) {
+			foreach ($meta_user_fields as $k => $user_field) {
+				if( $user_field['db_id'] === $field['db_id'] ){
+					foreach ($field as $value) {
+						
+					}
+					$meta_fields[$key] =  array_merge($user_field, $field);
+					unset($meta_user_fields[$k]);
+				}
+			}
+		}
+		$meta_fields = array_merge($meta_fields, $meta_user_fields);
 		?>
 			<br/>
 			<h2><?php _e('Users meta fields', 'gnuside') ?></h2>
