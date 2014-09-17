@@ -6,10 +6,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Export Users to CSV 0.3\n"
-"Report-Msgid-Bugs-To: http://wordpress.org/tag/export-users-to-csv\n"
-"POT-Creation-Date: 2011-11-27 09:07+0100\n"
-"PO-Revision-Date: 2011-11-27 09:24+0100\n"
-"Last-Translator: Ulrich Sossou <sorich87@gmail.com>\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-09-11 01:45+0100\n"
+"PO-Revision-Date: 2014-09-11 01:51+0100\n"
+"Last-Translator: test\n"
 "Language-Team: Ulrich Sossou\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
@@ -17,64 +17,146 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Language: French\n"
 "X-Poedit-Country: FRANCE\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: /home/adrien/Documents/wordpress-export-users-to-csv/\n"
+"X-Poedit-SearchPath-0: /home/adrien/Documents/wordpress-export-users-to-csv\n"
 
-#: export-users-to-csv.php:58
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:75
 msgid "Export to CSV"
 msgstr "Exporter en CSV"
 
-#: export-users-to-csv.php:138
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:288
+msgid "users."
+msgstr "utilisateurs"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:388
 msgid "You do not have sufficient permissions to access this page."
 msgstr "Vous n'avez pas les permissions suffisantes pour accéder à cette page."
 
-#: export-users-to-csv.php:142
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:392
 msgid "Export users to a CSV file"
 msgstr "Exporter les utilisateurs vers un fichier CSV"
 
-#: export-users-to-csv.php:145
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:393
+msgid "Don't forget to save your changes"
+msgstr "N'oubliez pas de sauver les modifications apportées"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:396
 msgid "No user found."
 msgstr "Aucun utilisateur trouvé."
 
-#: export-users-to-csv.php:152
-msgid "Role"
-msgstr "Role"
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:403
+msgid "User's role"
+msgstr "Rôle de l'utilisateur"
 
-#: export-users-to-csv.php:156
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:407
 msgid "Every Role"
 msgstr "Tous les Roles"
 
-#: export-users-to-csv.php:166
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:418
 msgid "Date range"
 msgstr "Date d'inscription"
 
-#: export-users-to-csv.php:169
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:421
 msgid "Start Date"
 msgstr "De"
 
-#: export-users-to-csv.php:173
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:427
 msgid "End Date"
 msgstr "A"
 
-#: export-users-to-csv.php:181
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:437
+#, fuzzy
+msgid "Save Changes"
+msgstr "Date d'inscription"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:438
 msgid "Export"
 msgstr "Exporter"
 
-#. Plugin Name of the plugin/theme
-msgid "Export Users to CSV"
-msgstr "Export Users to CSV"
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:464
+msgid "Users meta fields"
+msgstr "Champ méta utilisateur"
 
-#. Plugin URI of the plugin/theme
-msgid "http://pubpoet.com/plugins/"
-msgstr "http://pubpoet.com/plugins/"
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:469
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:550
+msgid "Field name in the database : check to export"
+msgstr "Nom du champ dans la base de donnée : Cochez les cases pour exporter les valeurs"
 
-#. Description of the plugin/theme
-msgid "Export Users data and metadata to a csv file."
-msgstr "Exporte les données et métadonnées des utilisateurs de votre site dans un fichier csv."
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:472
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:553
+msgid "Field name in the CSV file"
+msgstr "Nom du champ dans le fichier csv"
 
-#. Author of the plugin/theme
-msgid "PubPoet"
-msgstr "PubPoet"
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:475
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:556
+msgid "Field description"
+msgstr "Description pour l'admin."
 
-#. Author URI of the plugin/theme
-msgid "http://pubpoet.com/"
-msgstr "http://pubpoet.com/"
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:508
+msgid "add field"
+msgstr "Ajouter un champ"
 
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:518
+msgid "User ID in the database."
+msgstr "N° de l'utilisateur dans la DB"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:519
+msgid "User login."
+msgstr "Login"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:520
+msgid "User password."
+msgstr "Password"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:521
+msgid "Short name."
+msgstr "Nom court"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:522
+msgid "User e-mail."
+msgstr "E-mail"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:523
+msgid "User website."
+msgstr "Site web"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:524
+msgid "User registration date."
+msgstr "Date d'inscription"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:525
+msgid "Activation key sent by e-mail."
+msgstr "Clé d'inscription"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:526
+msgid "Dead value. Useless value. Deprecated."
+msgstr "Champ non utilisé"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:527
+msgid "User name displayed on this website."
+msgstr "Nom affiché sur le site"
+
+#: /home/adrien/Documents/wordpress-export-users-to-csv/export-users-to-csv.php:545
+msgid "Users fields"
+msgstr "Champs utilisateurs"
+
+#~ msgid "Role"
+#~ msgstr "Role"
+
+#~ msgid "Export Users to CSV"
+#~ msgstr "Export Users to CSV"
+
+#~ msgid "http://pubpoet.com/plugins/"
+#~ msgstr "http://pubpoet.com/plugins/"
+
+#~ msgid "Export Users data and metadata to a csv file."
+#~ msgstr ""
+#~ "Exporte les données et métadonnées des utilisateurs de votre site dans un "
+#~ "fichier csv."
+
+#~ msgid "PubPoet"
+#~ msgstr "PubPoet"
+
+#~ msgid "http://pubpoet.com/"
+#~ msgstr "http://pubpoet.com/"
