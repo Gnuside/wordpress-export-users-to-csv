@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Export_Users_to_CSV
- * @version 1.0.0
+ * @version 2.0.0
  */
 /*
 Plugin Name: Export Users to CSV
@@ -44,7 +44,7 @@ function gnuside_eutcvs_activation() {
 add_action( 'admin_enqueue_scripts', 'gnuside_eutcvs_js' );
 
 function gnuside_eutcvs_js($hook) {
-	if( 'users_page_export-users-to-csv' != $hook) 
+	if( 'users_page_export-users-to-csv' != $hook)
 		return;
 	wp_enqueue_script( 'gnuside_eutcvs_js', plugin_dir_url( __FILE__ ) . 'gnuside_eutcvs.js' );
 }
@@ -54,7 +54,7 @@ function gnuside_eutcvs_js($hook) {
  * @since 0.1
  **/
 class PP_EU_Export_Users {
-	
+
 	private $options;
 	/**
 	 * Class contructor
@@ -65,7 +65,7 @@ class PP_EU_Export_Users {
 		add_action( 'admin_menu', array( $this, 'add_admin_pages' ) );
 		add_action( 'init', array( $this, 'gnuside_action' ) );
 	}
-	
+
 	/**
 	 * Add administration menus
 	 *
@@ -74,30 +74,30 @@ class PP_EU_Export_Users {
 	public function add_admin_pages() {
 		add_users_page( __( 'Export to CSV', 'export-users-to-csv' ), __( 'Export to CSV', 'export-users-to-csv' ), 'list_users', 'export-users-to-csv', array( $this, 'users_page' ) );
 	}
-	
-	
+
+
 	private function gnuside_save_options( $csv_columns_names, $selected_fields, $meta_fields ){
-		if( !is_array($csv_columns_names) || !is_array($selected_fields) ) 
+		if( !is_array($csv_columns_names) || !is_array($selected_fields) )
 			return;
-		
-		if( !$options ) 
+
+		if( !$options )
 			$this->options = get_option( 'gnuside_eutcvs_plugin' );
-		
+
 		$options_array = array();
 		$options_array['csv_columns_names'] = $csv_columns_names;
 		$options_array['selected_fields'] = implode(',', $selected_fields);
-		
+
 		if( is_array($meta_fields) )
 			$options_array['meta_fields'] = $meta_fields;
 
 		if($this->options)
 			$this->options = $options_array + $this->options;
-		else 
+		else
 			$this->options = $options_array ;
 
 		update_option( 'gnuside_eutcvs_plugin' , $this->options);
 	}
-	
+
 	public function gnuside_action() {
 		if ( isset( $_POST['_wpnonce-pp-eu-export-users-users-page_export'] ) ) {
 			check_admin_referer( 'pp-eu-export-users-users-page_export', '_wpnonce-pp-eu-export-users-users-page_export' );
@@ -107,7 +107,7 @@ class PP_EU_Export_Users {
 				$this->generate_csv();
 		}
 	}
-	
+
 	private function get_meta_config() {
 		$path = dirname(__FILE__).'/export-users-to-csv.inc.php';
 		if( file_exists($path) ) {
@@ -125,24 +125,24 @@ class PP_EU_Export_Users {
 						);
 					}
 				}
-				
+
 				return $meta;
 			}
 		}
 		return array();
 	}
-	
+
 	private function gnuside_save_data() {
 		$users_fields = $this->gnuside_extract_post_data('eutcvs_users_');
 		$checked_fields = $this->gnuside_extract_post_data('eutcvs_checked_users_');
 		$meta_fields = $this->gnuside_extract_post_data_meta('eutcvs_meta');
-		
+
 		foreach ($checked_fields as $key => $value) {
 			if( $value === 'checked' )
 				unset($checked_fields[key]);
 		}
 		$checked_fields = array_keys( $checked_fields );
-		
+
 		$csv_var_name = array();
 		foreach ($users_fields as $key => $value) {
 			if($value)
@@ -150,10 +150,10 @@ class PP_EU_Export_Users {
 			else
 				$csv_var_name[$key] = $key;
 		}
-			
+
 		$this->gnuside_save_options( $csv_var_name , $checked_fields, $meta_fields );
 	}
-	
+
 	private function gnuside_extract_post_data_meta() {
 		$extract_data = array();
 
@@ -163,17 +163,17 @@ class PP_EU_Export_Users {
 				$extract_data[] = $this->gnuside_sanitize_array ( $value );
 			}
 		}
-		
+
 		return $extract_data;
-		
+
 	}
-	
+
 	private function gnuside_extract_post_data($prefix) {
 		$extract_data = array();
-		
-		if( !is_string($prefix) ) 
+
+		if( !is_string($prefix) )
 			return $extract_data;
-		
+
 		foreach ($_POST as $key => $value) {
 			if( strpos($key, $prefix) === 0 ){
 				$cleaned_key = sanitize_key( str_replace($prefix, '', $key) );
@@ -192,7 +192,7 @@ class PP_EU_Export_Users {
 			return array();
 		}
 		$sani = array();
-		
+
 		foreach ($data as $k => $v) {
 			if (!is_array($v) ) {
 				$sani[ sanitize_key($k) ] = sanitize_text_field($v);
@@ -206,12 +206,12 @@ class PP_EU_Export_Users {
 	private function get_meta_db($meta_fields, $users_id){
 		if( !is_array($meta_fields) || empty($meta_fields) )
 			return array();
-		
+
 		global $wpdb;
 		$my_query = "SELECT * ";
 		$my_query .= "FROM  $wpdb->usermeta ";
 		$my_query .= "WHERE  ";
-		
+
 		$first = TRUE;
 		foreach ($meta_fields as $value) {
 			if($first){
@@ -221,11 +221,11 @@ class PP_EU_Export_Users {
 			}
 			$my_query .= "OR meta_key LIKE '$value' ";
 		}
-		
+
 		if( is_array($users_id) && !empty($users_id) ){
 			$my_query .= "AND user_id in (". implode(',', $users_id) . ")";
 		}
-		
+
 		$mysql_query = $wpdb->prepare( $my_query, '');
 		$result = $wpdb->get_results($mysql_query, ARRAY_A);
 		return $result;
@@ -241,7 +241,7 @@ class PP_EU_Export_Users {
 		$meta_fields = $this->gnuside_extract_post_data_meta();
 		$meta_db_id = array();
 		$meta_csv_name = array();
-		
+
 		foreach ($meta_fields as $key => $field) {
 			if( !isset($field['checked']) || $field['checked'] != 'checked' || !isset($field['db_id']) || empty($field['db_id']) ){
 				unset($meta_fields[$key]);
@@ -253,14 +253,14 @@ class PP_EU_Export_Users {
 			else
 				$meta_csv_name[] = $field['db_id'];
 		}
-		
-		
+
+
 		foreach ($checked_fields as $key => $value) {
 			if( $value === 'checked' )
 				unset($checked_fields[key]);
 		}
 		$checked_fields = array_keys( $checked_fields );
-		
+
 		$args = array(
 			'fields' => 'all_with_meta',
 			'role' => sanitize_text_field( $_POST['role'] )
@@ -269,7 +269,7 @@ class PP_EU_Export_Users {
 		add_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
 		$users = get_users( $args );
 		remove_action( 'pre_user_query', array( $this, 'pre_user_query' ) );
-		
+
 		$users_id = array();
 		foreach ($users as $user) {
 			$users_id[] = $user->ID;
@@ -296,14 +296,14 @@ class PP_EU_Export_Users {
 
 		$fields = $checked_fields;
 		$csv_col_name = array();
-		
+
 		foreach ($checked_fields as $value) {
 			$csv_col_name[] = $users_var[$value];
 		}
-		
+
 		$csv_col_name = array_merge($csv_col_name, $meta_csv_name);
 		echo implode( ';', $csv_col_name ) . "\n";
-		
+
 		foreach ( $users as $user ) {
 			$data = array();
 			foreach ( $fields as $field ) {
@@ -311,7 +311,7 @@ class PP_EU_Export_Users {
 				$value = is_array( $value ) ? serialize( $value ) : $value;
 				$data[] = '"' . str_replace( '"', '""', $value ) . '"';
 			}
-			
+
 			foreach ($meta_csv_name as $name) {
 				foreach ($db_meta_rows as $key => $row) {
 					if ( ($row["user_id"] == $user->ID) && ($row["meta_key"]== $name) ) {
@@ -322,26 +322,26 @@ class PP_EU_Export_Users {
 			}
 			echo implode( ';', $data ) . "\n";
 		}
-		
+
 		exit;
 	}
-	
+
 	private function gnuside_get_db_columns_names($table_name) {
 		global $wpdb;
-		
+
 		$query = "SHOW COLUMNS FROM `$table_name`";
 		$columns_info = $wpdb->get_results( $query, ARRAY_A);
-		
+
 		if (!$columns_info)
 			return array();
-		
+
 		$columns_names = array();
 		foreach ($columns_info as $column_info ) {
 			$columns_names[] = $column_info['Field'];
 		}
 		return $columns_names;
 	}
-	
+
 	public function pre_user_query( $user_search ) {
 		global $wpdb;
 
@@ -361,7 +361,7 @@ class PP_EU_Export_Users {
 
 	private function export_date_options() {
 		global $wpdb, $wp_locale;
-		
+
 		$months = $wpdb->get_results( "
 			SELECT DISTINCT YEAR( user_registered ) AS year, MONTH( user_registered ) AS month
 			FROM $wpdb->users
@@ -375,7 +375,7 @@ class PP_EU_Export_Users {
 		$option_html = "";
 		foreach ( $months as $date ) {
 			if ( 0 == $date->year ) { continue; }
-			
+
 			$month = zeroise( $date->month, 2 );
 			$option_html .= '<option value="' . $date->year . '-' . $month . '">' . $wp_locale->get_month( $month ) . ' ' . $date->year . '</option>';
 		}
@@ -390,7 +390,7 @@ class PP_EU_Export_Users {
 		if ( ! current_user_can( 'list_users' ) )
 			wp_die( __( 'You do not have sufficient permissions to access this page.', 'export-users-to-csv' ) );
 		?>
-	
+
 		<div class="wrap">
 		<h2><?php _e( 'Export users to a CSV file', 'export-users-to-csv' ); ?></h2>
 		<p><?php _e( 'Don\'t forget to save your changes', 'export-users-to-csv' ); ?></p>
@@ -422,7 +422,7 @@ class PP_EU_Export_Users {
 						<td>
 							<select name="start_date" id="pp_eu_users_start_date">
 								<option value="0"><?php _e( 'Start Date', 'export-users-to-csv' ); ?></option>
-								<?php $date = $this->export_date_options(); 
+								<?php $date = $this->export_date_options();
 									echo $date;
 								?>
 							</select>
@@ -447,14 +447,14 @@ class PP_EU_Export_Users {
 	public function gnuside_display_meta_fields(){
 		$this->options = get_option( 'gnuside_eutcvs_plugin' );
 		$meta_user_fields = isset( $this->options['meta_fields'] ) ? $this->options['meta_fields'] : array() ;
-		
+
 		$meta_fields = $this->get_meta_config();
-		
+
 		foreach ($meta_fields as $key => $field) {
 			foreach ($meta_user_fields as $k => $user_field) {
 				if( $user_field['db_id'] === $field['db_id'] ){
 					foreach ($field as $value) {
-						
+
 					}
 					$meta_fields[$key] =  array_merge($user_field, $field);
 					unset($meta_user_fields[$k]);
@@ -481,7 +481,7 @@ class PP_EU_Export_Users {
 						</th>
 					</tr>
 				</thead>
-			
+
 				<tbody class="" id="" >
 					<?php if( is_array($meta_fields) && !empty($meta_fields) ) : ?>
 						<?php foreach ($meta_fields as $field) :  ?>
@@ -490,7 +490,7 @@ class PP_EU_Export_Users {
 								<td class="manage-column" >
 									<label>
 										<input type="checkbox" name="<?php echo "eutcvs_meta[$db_id][checked]"; ?>" data-toggle="gnuside-eutcvs-checkbox"
-											<?php echo ( isset($field['checked']) && $field['checked'] ) ? ' checked="checked" value="checked" ' : '' ; ?> /> 
+											<?php echo ( isset($field['checked']) && $field['checked'] ) ? ' checked="checked" value="checked" ' : '' ; ?> />
 										<input data-toggle="eutcvs_meta_id" data-id="<?php echo $db_id; ?>" name="<?php echo "eutcvs_meta[$db_id][db_id]"; ?>" value="<?php echo $db_id; ?>" type="text" />
 									</label>
 								</td>
@@ -515,7 +515,7 @@ class PP_EU_Export_Users {
 			</table>
 		<?php
 	}
-	
+
 	public function gnuside_desc_array(){
 		return array(
 			'ID'                    => __( 'User ID in the database.', 'export-users-to-csv'),
@@ -530,19 +530,19 @@ class PP_EU_Export_Users {
 			'display_name'          => __( 'User name displayed on this website.', 'export-users-to-csv')
 		);
 	}
-	
+
 	private function gnuside_display_users_fields() {
 		global $wpdb;
 		$users_db_columns = $this->gnuside_get_db_columns_names($wpdb->users);
 		$columns_nbr = count($users_db_columns);
 
 		if(!$columns_nbr) { return; }
-		
+
 		$this->options = get_option( 'gnuside_eutcvs_plugin' );
 		$selected_fields = isset( $this->options['selected_fields'] ) ? explode( ',', $this->options['selected_fields']) : array() ;
 		$csv_columns_names = isset( $this->options['csv_columns_names'] ) ? $this->options['csv_columns_names'] : array() ;
 		$desc = $this->gnuside_desc_array();
-		
+
 		?>
 			<br/>
 			<h2><?php _e('Users fields', 'export-users-to-csv') ?></h2>
@@ -560,32 +560,32 @@ class PP_EU_Export_Users {
 						</th>
 					</tr>
 				</thead>
-			
+
 				<tbody class="" id="" >
 					<?php foreach ($users_db_columns as $value) : ?>
 						<tr class="alternate" >
 							<td class="manage-column" >
 								<label>
 									<input type="checkbox" name="<?php echo "eutcvs_checked_users_".$value; ?>" data-toggle="gnuside-eutcvs-checkbox"
-										<?php 
+										<?php
 											$active = in_array( strtolower($value), $selected_fields );
-											
+
 											if( $active ) {
 												echo ' checked="checked" ';
 												echo ' value="checked" ';
 											}
 										?>
-									/> 
+									/>
 									<?php echo $value; ?>
 								</label>
 							</td>
 							<td>
 								<input type="text"
-								<?php 
+								<?php
 									echo ' name="eutcvs_users_'.$value.'" ';
 									if(! $csv_columns_names [$value])
 										echo ' value="'.$value.'"';
-									else 
+									else
 										echo ' value="'.$csv_columns_names[$value].'"';
 								?>
 								/>
@@ -595,7 +595,7 @@ class PP_EU_Export_Users {
 							</td>
 						</tr>
 					<?php endforeach; ?>
-					
+
 				</tbody>
 			</table>
 		<?php
