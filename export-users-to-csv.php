@@ -285,7 +285,7 @@ class PP_EU_Export_Users {
 		$sitename = sanitize_key( get_bloginfo( 'name' ) );
 		if ( ! empty( $sitename ) )
 			$sitename .= '.';
-		$filename = $sitename . __('users.', 'gnuside') . date( 'Y-m-d-H-i-s' ) . '.csv';
+		$filename = $sitename . __('users.', 'export-users-to-csv') . date( 'Y-m-d-H-i-s' ) . '.csv';
 
 		header( 'Content-Description: File Transfer' );
 		header( 'Content-Disposition: attachment; filename=' . $filename );
@@ -311,10 +311,13 @@ class PP_EU_Export_Users {
 				$value = is_array( $value ) ? serialize( $value ) : $value;
 				$data[] = '"' . str_replace( '"', '""', $value ) . '"';
 			}
-			foreach ($db_meta_rows as $key => $row) {
-				if($row["user_id"] == $user->ID){
-					$data[] = '"' . str_replace( '"', '""', $row["meta_value"] ) . '"';
-					unset($db_meta_rows[key]);
+			
+			foreach ($meta_csv_name as $name) {
+				foreach ($db_meta_rows as $key => $row) {
+					if ( ($row["user_id"] == $user->ID) && ($row["meta_key"]== $name) ) {
+						$data[] = '"' . str_replace( '"', '""', $row["meta_value"] ) . '"';
+						unset($db_meta_rows[key]);
+					}
 				}
 			}
 			echo implode( ';', $data ) . "\n";
@@ -390,7 +393,7 @@ class PP_EU_Export_Users {
 	
 		<div class="wrap">
 		<h2><?php _e( 'Export users to a CSV file', 'export-users-to-csv' ); ?></h2>
-		<p><?php _e( 'Don\'t forget to save your changes', 'gnuside' ); ?></p>
+		<p><?php _e( 'Don\'t forget to save your changes', 'export-users-to-csv' ); ?></p>
 		<?php
 		if ( isset( $_GET['error'] ) ) {
 			echo '<div class="updated"><p><strong>' . __( 'No user found.', 'export-users-to-csv' ) . '</strong></p></div>';
@@ -461,18 +464,18 @@ class PP_EU_Export_Users {
 		$meta_fields = array_merge($meta_fields, $meta_user_fields);
 		?>
 			<br/>
-			<h2><?php _e('Users meta fields', 'gnuside') ?></h2>
+			<h2><?php _e('Users meta fields', 'export-users-to-csv') ?></h2>
 			<table class="wp-list-table widefat fixed" id="gnuside-eutcvs-table-usermeta">
 				<thead>
 					<tr>
 						<th class="manage-column" >
-							<?php _e("Field name in the database : check to export", 'gnuside') ?>
+							<?php _e("Field name in the database : check to export", 'export-users-to-csv') ?>
 						</th>
 						<th class="manage-column" >
-							<?php _e("Field name in the CSV file", 'gnuside') ?>
+							<?php _e("Field name in the CSV file", 'export-users-to-csv') ?>
 						</th>
 						<th class="manage-column" >
-							<?php _e("Field description", 'gnuside') ?>
+							<?php _e("Field description", 'export-users-to-csv') ?>
 						</th>
 						<th class="manage-column" >
 						</th>
@@ -505,7 +508,7 @@ class PP_EU_Export_Users {
 					<?php endif; ?>
 					<tr data-toggle="gnuside-eutcvs-usermeta-button">
 						<td>
-							<input type="button" class="button-primary" value="<?php _e('add field', 'gnuside') ?>" data-toggle="gnuside-eutcvs-add-field" />
+							<input type="button" class="button-primary" value="<?php _e('add field', 'export-users-to-csv') ?>" data-toggle="gnuside-eutcvs-add-field" />
 						</td>
 					</tr>
 				</tbody>
@@ -515,16 +518,16 @@ class PP_EU_Export_Users {
 	
 	public function gnuside_desc_array(){
 		return array(
-			'ID'                    => __( 'User ID in the database.', 'gnuside'),
-			'user_login'            => __( 'User login.', 'gnuside'),
-			'user_pass'             => __( 'User password.', 'gnuside'),
-			'user_nicename'         => __( 'Short name.', 'gnuside'),
-			'user_email'            => __( 'User e-mail.', 'gnuside'),
-			'user_url'              => __( 'User website.', 'gnuside'),
-			'user_registered'       => __( 'User registration date.', 'gnuside'),
-			'user_activation_key'   => __( 'Activation key sent by e-mail.', 'gnuside'),
-			'user_status'           => __( 'Dead value. Useless value. Deprecated.', 'gnuside'),
-			'display_name'          => __( 'User name displayed on this website.', 'gnuside')
+			'ID'                    => __( 'User ID in the database.', 'export-users-to-csv'),
+			'user_login'            => __( 'User login.', 'export-users-to-csv'),
+			'user_pass'             => __( 'User password.', 'export-users-to-csv'),
+			'user_nicename'         => __( 'Short name.', 'export-users-to-csv'),
+			'user_email'            => __( 'User e-mail.', 'export-users-to-csv'),
+			'user_url'              => __( 'User website.', 'export-users-to-csv'),
+			'user_registered'       => __( 'User registration date.', 'export-users-to-csv'),
+			'user_activation_key'   => __( 'Activation key sent by e-mail.', 'export-users-to-csv'),
+			'user_status'           => __( 'Dead value. Useless value. Deprecated.', 'export-users-to-csv'),
+			'display_name'          => __( 'User name displayed on this website.', 'export-users-to-csv')
 		);
 	}
 	
@@ -542,18 +545,18 @@ class PP_EU_Export_Users {
 		
 		?>
 			<br/>
-			<h2><?php _e('Users fields', 'gnuside') ?></h2>
+			<h2><?php _e('Users fields', 'export-users-to-csv') ?></h2>
 			<table class="wp-list-table widefat fixed" id="gnuside-eutcvs-users">
 				<thead>
 					<tr>
 						<th class="manage-column" >
-							<?php _e("Field name in the database : check to export", 'gnuside') ?>
+							<?php _e("Field name in the database : check to export", 'export-users-to-csv') ?>
 						</th>
 						<th class="manage-column" >
-							<?php _e("Field name in the CSV file", 'gnuside') ?>
+							<?php _e("Field name in the CSV file", 'export-users-to-csv') ?>
 						</th>
 						<th class="manage-column" >
-							<?php _e("Field description", 'gnuside') ?>
+							<?php _e("Field description", 'export-users-to-csv') ?>
 						</th>
 					</tr>
 				</thead>
